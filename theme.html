@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IT Knowledge Base — Theme Playground</title>
+<style>
+  /* ============ RESET ============ */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+    color: var(--text);
+    background: var(--bg);
+    transition: background .25s ease, color .25s ease;
+  }
+
+  /* ============ THEME TOKENS ============ */
+
+  /* Theme 1: Corporate Trust (default) — navy/blue, clean enterprise SaaS */
+  [data-theme="corporate"] {
+    --bg: #f4f6f9;
+    --surface: #ffffff;
+    --surface-alt: #eef1f6;
+    --border: #dbe2ea;
+    --text: #1c2b3a;
+    --text-muted: #5b6b7d;
+    --primary: #1f4e8c;
+    --primary-hover: #163a68;
+    --primary-fg: #ffffff;
+    --accent: #0e7c86;
+    --success: #1c8a4b;
+    --success-bg: #e5f5ec;
+    --warning: #b8790a;
+    --warning-bg: #fbf0dd;
+    --danger: #c23838;
+    --danger-bg: #fbe8e8;
+    --draft-bg: #edf0f4;
+    --draft-fg: #5b6b7d;
+    --radius: 8px;
+    --shadow: 0 1px 2px rgba(20,30,45,.06), 0 1px 8px rgba(20,30,45,.04);
+    --font-heading: -apple-system, "Segoe UI", sans-serif;
+  }
+
+  /* Theme 2: Technical Dark — terminal-inspired, for engineers */
+  [data-theme="dark-technical"] {
+    --bg: #0d1117;
+    --surface: #151b23;
+    --surface-alt: #1c2530;
+    --border: #2a3542;
+    --text: #d9e2ec;
+    --text-muted: #8b98a8;
+    --primary: #4f8cff;
+    --primary-hover: #74a4ff;
+    --primary-fg: #08111f;
+    --accent: #35d0ba;
+    --success: #3fbf6f;
+    --success-bg: #123423;
+    --warning: #e2a53a;
+    --warning-bg: #3a2c11;
+    --danger: #f0605c;
+    --danger-bg: #3a1717;
+    --draft-bg: #232c37;
+    --draft-fg: #8b98a8;
+    --radius: 6px;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 4px 16px rgba(0,0,0,.35);
+    --font-heading: "SF Mono", "Consolas", monospace;
+  }
+
+  /* Theme 3: Minimal Clean — warm neutrals, high whitespace, calm reading */
+  [data-theme="minimal"] {
+    --bg: #fbfaf8;
+    --surface: #ffffff;
+    --surface-alt: #f4f2ee;
+    --border: #e6e2da;
+    --text: #2b2822;
+    --text-muted: #7a7468;
+    --primary: #2b2822;
+    --primary-hover: #000000;
+    --primary-fg: #ffffff;
+    --accent: #a8763e;
+    --success: #4c7a4f;
+    --success-bg: #eaf1e9;
+    --warning: #a8763e;
+    --warning-bg: #f6ece0;
+    --danger: #a8453c;
+    --danger-bg: #f7e9e7;
+    --draft-bg: #f0eee9;
+    --draft-fg: #7a7468;
+    --radius: 3px;
+    --shadow: none;
+    --font-heading: Georgia, "Times New Roman", serif;
+  }
+
+  /* ============ LAYOUT ============ */
+  .app { min-height: 100vh; }
+
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 28px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+  .brand { display: flex; align-items: center; gap: 10px; font-family: var(--font-heading); font-weight: 700; font-size: 17px; }
+  .brand-mark {
+    width: 28px; height: 28px; border-radius: var(--radius);
+    background: var(--primary); color: var(--primary-fg);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 800;
+  }
+  .topbar-actions { display: flex; align-items: center; gap: 14px; }
+  .avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--accent); color: var(--primary-fg);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700;
+  }
+
+  .theme-switcher {
+    display: flex; gap: 6px; padding: 10px 28px;
+    background: var(--surface-alt); border-bottom: 1px solid var(--border);
+    flex-wrap: wrap; align-items: center;
+  }
+  .theme-switcher span { font-size: 12px; color: var(--text-muted); margin-right: 4px; text-transform: uppercase; letter-spacing: .04em; }
+  .theme-btn {
+    padding: 6px 14px; border-radius: 999px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--text); font-size: 13px; cursor: pointer;
+    transition: all .15s ease;
+  }
+  .theme-btn:hover { border-color: var(--primary); }
+  .theme-btn.active { background: var(--primary); color: var(--primary-fg); border-color: var(--primary); }
+
+  .layout { display: grid; grid-template-columns: 220px 1fr; gap: 0; }
+  .sidebar {
+    background: var(--surface); border-right: 1px solid var(--border);
+    padding: 20px 14px; min-height: calc(100vh - 105px);
+  }
+  .sidebar h4 { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); margin: 16px 0 8px 8px; }
+  .sidebar h4:first-child { margin-top: 0; }
+  .nav-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 10px; border-radius: var(--radius); font-size: 14px;
+    color: var(--text-muted); cursor: pointer; margin-bottom: 2px;
+  }
+  .nav-item:hover { background: var(--surface-alt); color: var(--text); }
+  .nav-item.active { background: var(--primary); color: var(--primary-fg); }
+  .nav-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: .5; }
+
+  .main { padding: 28px; }
+
+  .page-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; gap: 16px; flex-wrap: wrap; }
+  .page-head h1 { font-family: var(--font-heading); font-size: 24px; }
+  .page-head p { color: var(--text-muted); font-size: 14px; margin-top: 4px; }
+
+  /* Search */
+  .search-bar {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 10px 14px; margin-bottom: 20px; max-width: 520px;
+  }
+  .search-bar input { border: none; outline: none; background: transparent; color: var(--text); font-size: 14px; width: 100%; }
+  .search-bar input::placeholder { color: var(--text-muted); }
+  .search-icon { color: var(--text-muted); font-size: 14px; }
+
+  /* Buttons */
+  .btn { border: none; padding: 9px 16px; border-radius: var(--radius); font-size: 14px; cursor: pointer; font-weight: 600; transition: background .15s ease; }
+  .btn-primary { background: var(--primary); color: var(--primary-fg); }
+  .btn-primary:hover { background: var(--primary-hover); }
+  .btn-ghost { background: transparent; color: var(--text); border: 1px solid var(--border); }
+  .btn-ghost:hover { background: var(--surface-alt); }
+  .btn-row { display: flex; gap: 10px; }
+
+  /* Tags / badges */
+  .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+  .badge-published { background: var(--success-bg); color: var(--success); }
+  .badge-draft { background: var(--draft-bg); color: var(--draft-fg); }
+  .badge-compliance { background: var(--warning-bg); color: var(--warning); }
+  .badge-danger { background: var(--danger-bg); color: var(--danger); }
+
+  .tag { display: inline-block; padding: 3px 9px; border-radius: var(--radius); font-size: 12px; background: var(--surface-alt); color: var(--text-muted); border: 1px solid var(--border); }
+
+  /* Doc cards */
+  .doc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; margin-bottom: 28px; }
+  .doc-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 16px; box-shadow: var(--shadow); cursor: pointer; transition: transform .15s ease, border-color .15s ease;
+  }
+  .doc-card:hover { border-color: var(--primary); transform: translateY(-1px); }
+  .doc-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+  .doc-title { font-weight: 700; font-size: 15px; margin-bottom: 6px; }
+  .doc-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 10px; }
+  .doc-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  /* Table (version history) */
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; margin-bottom: 24px; }
+  .panel-head { padding: 14px 18px; border-bottom: 1px solid var(--border); font-weight: 700; font-family: var(--font-heading); font-size: 14px; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 10px 18px; font-size: 13px; }
+  th { color: var(--text-muted); font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: .04em; border-bottom: 1px solid var(--border); }
+  tbody tr { border-bottom: 1px solid var(--border); }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--surface-alt); }
+
+  code { background: var(--surface-alt); padding: 1px 6px; border-radius: 4px; font-size: 12px; }
+
+  footer { padding: 18px 28px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); }
+</style>
+</head>
+<body data-theme="corporate">
+<div class="app">
+
+  <div class="theme-switcher">
+    <span>Theme</span>
+    <button class="theme-btn active" data-theme-btn="corporate">Corporate Trust</button>
+    <button class="theme-btn" data-theme-btn="dark-technical">Technical Dark</button>
+    <button class="theme-btn" data-theme-btn="minimal">Minimal Clean</button>
+  </div>
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-mark">KB</div>
+      IT Knowledge Base
+    </div>
+    <div class="topbar-actions">
+      <span class="search-icon" style="font-size:13px;color:var(--text-muted)">EMEA Region</span>
+      <div class="avatar">TG</div>
+    </div>
+  </div>
+
+  <div class="layout">
+    <div class="sidebar">
+      <h4>Browse</h4>
+      <div class="nav-item active"><span class="nav-dot"></span> All Documents</div>
+      <div class="nav-item"><span class="nav-dot"></span> Favorites</div>
+      <div class="nav-item"><span class="nav-dot"></span> Recently Viewed</div>
+      <h4>Categories</h4>
+      <div class="nav-item"><span class="nav-dot"></span> Technical Guides</div>
+      <div class="nav-item"><span class="nav-dot"></span> System Configuration</div>
+      <div class="nav-item"><span class="nav-dot"></span> Compliance</div>
+      <h4>Admin</h4>
+      <div class="nav-item"><span class="nav-dot"></span> Users &amp; Groups</div>
+      <div class="nav-item"><span class="nav-dot"></span> Audit Log</div>
+    </div>
+
+    <div class="main">
+      <div class="page-head">
+        <div>
+          <h1>Documents</h1>
+          <p>Single source of truth for IT procedures, configs, and compliance docs across all regions.</p>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-ghost">Import Attachment</button>
+          <button class="btn btn-primary">+ New Document</button>
+        </div>
+      </div>
+
+      <div class="search-bar">
+        <span class="search-icon">&#128269;</span>
+        <input type="text" placeholder="Search by keyword, category, or tag&hellip;">
+      </div>
+
+      <div class="doc-grid">
+        <div class="doc-card">
+          <div class="doc-card-top">
+            <span class="badge badge-published">Published</span>
+            <span class="tag">v4</span>
+          </div>
+          <div class="doc-title">VPN Split-Tunnel Configuration</div>
+          <div class="doc-meta">System Configuration &middot; Owner: J. Alvarez &middot; Reviewed 2026-03-12</div>
+          <div class="doc-tags"><span class="tag">networking</span><span class="tag">vpn</span></div>
+        </div>
+
+        <div class="doc-card">
+          <div class="doc-card-top">
+            <span class="badge badge-compliance">Pending Approval</span>
+            <span class="tag">v2</span>
+          </div>
+          <div class="doc-title">Data Retention Policy &mdash; APAC</div>
+          <div class="doc-meta">Compliance &middot; Owner: S. Lim &middot; Reviewed 2025-11-02</div>
+          <div class="doc-tags"><span class="tag">compliance</span><span class="tag">retention</span></div>
+        </div>
+
+        <div class="doc-card">
+          <div class="doc-card-top">
+            <span class="badge badge-draft">Draft</span>
+            <span class="tag">v1</span>
+          </div>
+          <div class="doc-title">Onboarding: New Laptop Imaging</div>
+          <div class="doc-meta">Technical Guide &middot; Owner: T. Goh &middot; Not yet reviewed</div>
+          <div class="doc-tags"><span class="tag">onboarding</span><span class="tag">imaging</span></div>
+        </div>
+
+        <div class="doc-card">
+          <div class="doc-card-top">
+            <span class="badge badge-danger">Stale &gt; 12mo</span>
+            <span class="tag">v6</span>
+          </div>
+          <div class="doc-title">Firewall Change Management SOP</div>
+          <div class="doc-meta">Compliance &middot; Owner: R. Osei &middot; Reviewed 2024-01-08</div>
+          <div class="doc-tags"><span class="tag">firewall</span><span class="tag">sop</span></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">Version History &mdash; VPN Split-Tunnel Configuration</div>
+        <table>
+          <thead>
+            <tr><th>Version</th><th>Author</th><th>Date</th><th>Action</th><th>Status</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>v4</code></td><td>J. Alvarez</td><td>2026-03-12</td><td>Published</td><td><span class="badge badge-published">Published</span></td></tr>
+            <tr><td><code>v3</code></td><td>J. Alvarez</td><td>2026-01-05</td><td>Edited</td><td><span class="badge badge-draft">Superseded</span></td></tr>
+            <tr><td><code>v2</code></td><td>M. Chen</td><td>2025-09-21</td><td>Approved</td><td><span class="badge badge-draft">Superseded</span></td></tr>
+            <tr><td><code>v1</code></td><td>M. Chen</td><td>2025-08-02</td><td>Created</td><td><span class="badge badge-draft">Superseded</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <footer>Access restricted to IT Google Workspace group &middot; All actions are audit-logged</footer>
+</div>
+
+<script>
+  document.querySelectorAll('[data-theme-btn]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      document.body.setAttribute('data-theme', btn.getAttribute('data-theme-btn'));
+      document.querySelectorAll('[data-theme-btn]').forEach(function (b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+    });
+  });
+</script>
+</body>
+</html>

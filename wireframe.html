@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>IT Knowledge Base — Wireframe Playground</title>
+<style>
+  :root{
+    --bg:#fafaf8; --panel:#fff; --ink:#111; --muted:#666; --line:#e5e5e0; --accent:#d33;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system, system-ui, "Segoe UI", sans-serif;
+  }
+  header.hero{
+    padding:32px 40px 24px; border-bottom:1px solid var(--line); background:var(--panel);
+  }
+  header.hero .crumb{ font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+  header.hero h1{ font-size:26px; margin:6px 0 8px; }
+  header.hero p{ font-size:14px; color:var(--muted); max-width:720px; margin:0 0 14px; }
+  .pills{ display:flex; gap:8px; flex-wrap:wrap; }
+  .pill{
+    font-size:12px; border:1px solid var(--line); border-radius:999px; padding:4px 10px; color:var(--muted);
+  }
+  nav.tabs{
+    position:sticky; top:0; z-index:5; display:flex; gap:4px; padding:12px 40px;
+    background:var(--panel); border-bottom:1px solid var(--line);
+  }
+  nav.tabs button{
+    font-family:inherit; font-size:14px; cursor:pointer; padding:10px 18px;
+    border:1px solid var(--line); background:var(--bg); border-radius:8px 8px 0 0;
+    border-bottom:none; color:var(--muted);
+  }
+  nav.tabs button.active{ background:var(--panel); color:var(--ink); font-weight:600; border-color:var(--ink); }
+  main{ padding:32px 40px 64px; max-width:1360px; margin:0 auto; }
+  .screen{ display:none; }
+  .screen.active{ display:block; }
+  .wire-wrap{
+    background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:16px;
+    overflow:auto;
+  }
+  .wire-wrap svg{ display:block; max-width:100%; height:auto; border:1px solid var(--line); }
+  .meta-row{ display:flex; justify-content:space-between; align-items:baseline; margin:20px 0 10px; }
+  .meta-row h2{ font-size:18px; margin:0; }
+  .meta-row span{ font-size:12px; color:var(--muted); }
+  ol.annot{ font-size:13px; color:#333; line-height:1.6; padding-left:20px; margin:12px 0 0; columns:2; column-gap:32px; }
+  .assumptions{
+    margin-top:16px; font-size:12px; color:var(--muted); border-left:2px solid var(--line); padding-left:12px;
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="crumb">IT Knowledge Base · PRD wireframes</div>
+  <h1>Wireframe Playground</h1>
+  <p>Low-fidelity, monochrome sketches of the three core flows from the PRD: signing in with a restricted Google account, browsing/searching the canonical document set, and viewing a versioned document with compliance sign-off.</p>
+  <div class="pills">
+    <span class="pill">3 screens</span>
+    <span class="pill">Desktop · 1280×800</span>
+    <span class="pill">Lo-fi · monochrome</span>
+    <span class="pill">Click tabs to switch</span>
+  </div>
+</header>
+
+<nav class="tabs">
+  <button class="active" data-target="s1">1 · Login</button>
+  <button data-target="s2">2 · Document Library</button>
+  <button data-target="s3">3 · Document Detail / Editor</button>
+</nav>
+
+<main>
+
+  <!-- SCREEN 1: LOGIN -->
+  <section class="screen active" id="s1">
+    <div class="meta-row"><h2>Screen 1 — Login (Google OAuth, access-restricted)</h2><span>1280×800 desktop</span></div>
+    <div class="wire-wrap">
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="800" viewBox="0 0 1280 800"
+     font-family="-apple-system, system-ui, sans-serif" fill="#fff" stroke="#000" stroke-width="1.5">
+  <rect x="0" y="0" width="1280" height="800" />
+
+  <!-- 1: top bar -->
+  <rect x="0" y="0" width="1280" height="56" />
+  <text x="32" y="34" font-size="14" stroke="none" fill="#000">IT Knowledge Base</text>
+  <text x="1200" y="34" font-size="12" stroke="none" fill="#666" text-anchor="end">Internal · IT staff only</text>
+
+  <!-- login card -->
+  <g transform="translate(440,180)">
+    <rect x="0" y="0" width="400" height="440" rx="8" />
+
+    <!-- 2: logo placeholder -->
+    <circle cx="200" cy="64" r="32" fill="#e6e6e6" />
+
+    <!-- 3: title/subtitle -->
+    <text x="200" y="132" font-size="20" text-anchor="middle" stroke="none" fill="#000">IT Knowledge Base</text>
+    <text x="200" y="154" font-size="12" text-anchor="middle" stroke="none" fill="#666">Sign in with your company Google account</text>
+
+    <!-- 4: google sign-in button -->
+    <g transform="translate(40,192)">
+      <rect x="0" y="0" width="320" height="48" rx="4" />
+      <rect x="16" y="14" width="20" height="20" fill="#e6e6e6" />
+      <text x="180" y="29" font-size="14" text-anchor="middle" stroke="none" fill="#000">Sign in with Google</text>
+    </g>
+
+    <!-- 5: divider -->
+    <line x1="40" y1="264" x2="360" y2="264" stroke-dasharray="2,4" />
+
+    <!-- 6: access restriction note -->
+    <text x="200" y="292" font-size="12" text-anchor="middle" stroke="none" fill="#666">Access is limited to accounts in the</text>
+    <text x="200" y="308" font-size="12" text-anchor="middle" stroke="none" fill="#666">IT Google Workspace group.</text>
+
+    <!-- 7: no local login note -->
+    <text x="200" y="340" font-size="12" text-anchor="middle" stroke="none" fill="#666">No username/password login is available.</text>
+
+    <!-- 8: help link -->
+    <text x="200" y="404" font-size="12" text-anchor="middle" stroke="none" fill="#000">Trouble signing in? Contact IT Admin</text>
+  </g>
+
+  <!-- 9: footer -->
+  <text x="640" y="770" font-size="12" text-anchor="middle" stroke="none" fill="#666">© Internal IT Knowledge Base — not for external distribution</text>
+
+  <!-- ANNOTATION LAYER (dashed red, example callout on restriction note) -->
+  <g stroke="#d33" stroke-dasharray="4,3" fill="none">
+    <rect x="452" y="440" width="376" height="60" rx="4" />
+  </g>
+  <text x="852" y="470" font-size="12" stroke="none" fill="#d33">6 — access-denied path shown post-login, not here</text>
+</svg>
+    </div>
+    <ol class="annot">
+      <li>1 — top bar: app name + "IT staff only" scope reminder</li>
+      <li>2 — logo/brand placeholder</li>
+      <li>3 — title + one-line purpose subtitle</li>
+      <li>4 — "Sign in with Google" button (only auth path — AC: no local login)</li>
+      <li>5 — divider separating action from access notes</li>
+      <li>6 — access restriction copy (domain + IT Google Group)</li>
+      <li>7 — explicit "no password option" reassurance</li>
+      <li>8 — support/help link for IT Admin escalation</li>
+      <li>9 — footer / internal-use disclaimer</li>
+    </ol>
+    <div class="assumptions">Assumptions: signed-out state; users failing the group check are redirected to a separate "Access Denied" screen (not shown) rather than seeing an error here, per AC in PRD §2.</div>
+  </section>
+
+  <!-- SCREEN 2: DOCUMENT LIBRARY -->
+  <section class="screen" id="s2">
+    <div class="meta-row"><h2>Screen 2 — Document Library (browse / search / categorize)</h2><span>1280×800 desktop</span></div>
+    <div class="wire-wrap">
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="800" viewBox="0 0 1280 800"
+     font-family="-apple-system, system-ui, sans-serif" fill="#fff" stroke="#000" stroke-width="1.5">
+  <rect x="0" y="0" width="1280" height="800" />
+
+  <!-- 1: navbar -->
+  <rect x="0" y="0" width="1280" height="64" />
+  <text x="24" y="38" font-size="16" stroke="none" fill="#000">IT Knowledge Base</text>
+
+  <!-- 2: global search -->
+  <g transform="translate(360,16)">
+    <rect x="0" y="0" width="480" height="32" rx="16" />
+    <circle cx="16" cy="16" r="6" fill="none" />
+    <text x="32" y="21" font-size="12" stroke="none" fill="#666">Search by title, body, or tag…</text>
+  </g>
+
+  <!-- 3: avatar / user menu -->
+  <circle cx="1232" cy="32" r="16" fill="#e6e6e6" />
+
+  <!-- SIDEBAR -->
+  <rect x="0" y="64" width="240" height="736" />
+  <text x="24" y="96" font-size="12" stroke="none" fill="#666">CATEGORIES</text>
+
+  <!-- 4: category list -->
+  <g font-size="14" stroke="none" fill="#000">
+    <rect x="0" y="112" width="240" height="36" fill="#e6e6e6" stroke="none"/>
+    <text x="24" y="135">All Documents</text>
+    <text x="24" y="171">Technical Guides</text>
+    <text x="24" y="207">System Configuration</text>
+    <text x="24" y="243">Compliance</text>
+  </g>
+  <line x1="24" y1="264" x2="216" y2="264" stroke-dasharray="2,4" />
+
+  <!-- 5: tags -->
+  <text x="24" y="288" font-size="12" stroke="none" fill="#666">TAGS</text>
+  <g font-size="12" stroke="#000" fill="#fff">
+    <rect x="24" y="300" width="60" height="24" rx="12" /><text x="54" y="316" text-anchor="middle" stroke="none" fill="#000">vpn</text>
+    <rect x="92" y="300" width="72" height="24" rx="12" /><text x="128" y="316" text-anchor="middle" stroke="none" fill="#000">network</text>
+    <rect x="24" y="332" width="70" height="24" rx="12" /><text x="59" y="348" text-anchor="middle" stroke="none" fill="#000">backup</text>
+  </g>
+  <line x1="24" y1="368" x2="216" y2="368" stroke-dasharray="2,4" />
+
+  <!-- 6: favorites -->
+  <text x="24" y="392" font-size="12" stroke="none" fill="#666">FAVORITES</text>
+  <text x="24" y="416" font-size="13" stroke="none" fill="#000">★ Onboarding Checklist</text>
+  <text x="24" y="440" font-size="13" stroke="none" fill="#000">★ Password Reset SOP</text>
+
+  <!-- 7: region filter -->
+  <text x="24" y="480" font-size="12" stroke="none" fill="#666">REGION</text>
+  <g font-size="13" stroke="none" fill="#000">
+    <rect x="24" y="6" width="12" height="12" transform="translate(0,486)" />
+    <text x="44" y="502">All regions</text>
+  </g>
+
+  <!-- MAIN CONTENT -->
+  <!-- 8: page header row -->
+  <text x="264" y="104" font-size="28" stroke="none" fill="#000">All Documents</text>
+  <text x="264" y="126" font-size="12" stroke="none" fill="#666">1,248 documents · showing published only</text>
+
+  <!-- 9: new document button -->
+  <g transform="translate(1104,80)">
+    <rect x="0" y="0" width="152" height="40" rx="4" />
+    <text x="76" y="25" font-size="14" text-anchor="middle" stroke="none" fill="#000">+ New Document</text>
+  </g>
+
+  <!-- 10: filter/sort row -->
+  <g transform="translate(264,144)" font-size="12" stroke="#000" fill="#fff">
+    <rect x="0" y="0" width="120" height="28" rx="4" /><text x="60" y="19" text-anchor="middle" stroke="none" fill="#000">Category ▾</text>
+    <rect x="132" y="0" width="100" height="28" rx="4" /><text x="182" y="19" text-anchor="middle" stroke="none" fill="#000">Status ▾</text>
+    <rect x="244" y="0" width="140" height="28" rx="4" /><text x="314" y="19" text-anchor="middle" stroke="none" fill="#000">Last reviewed ▾</text>
+  </g>
+
+  <!-- 11: table header -->
+  <g transform="translate(264,196)" font-size="12" stroke="none" fill="#666">
+    <text x="0" y="16">TITLE</text>
+    <text x="480" y="16">CATEGORY</text>
+    <text x="640" y="16">OWNER</text>
+    <text x="760" y="16">LAST REVIEWED</text>
+    <text x="920" y="16">STATUS</text>
+  </g>
+  <line x1="264" y1="212" x2="1256" y2="212" />
+
+  <!-- 12: document rows -->
+  <g font-size="13">
+    <!-- row template repeated -->
+    <g transform="translate(264,220)">
+      <line x1="0" y1="56" x2="992" y2="56" stroke-dasharray="2,4" />
+      <text x="0" y="24" stroke="none" fill="#000">VPN Client Setup — Windows &amp; macOS</text>
+      <text x="0" y="42" stroke="none" fill="#666">Step-by-step VPN configuration for remote access</text>
+      <rect x="480" y="8" width="120" height="22" rx="11" /><text x="540" y="23" text-anchor="middle" font-size="11" stroke="none" fill="#000">Tech Guide</text>
+      <circle cx="656" cy="18" r="10" fill="#e6e6e6" /><text x="674" y="23" stroke="none" fill="#000">J. Tan</text>
+      <text x="760" y="23" stroke="none" fill="#000">2026-05-02</text>
+      <rect x="920" y="8" width="88" height="22" rx="11" /><text x="964" y="23" text-anchor="middle" font-size="11" stroke="none" fill="#000">Published</text>
+      <text x="1030" y="23" stroke="none" fill="#000">☆</text>
+    </g>
+    <g transform="translate(264,284)">
+      <line x1="0" y1="56" x2="992" y2="56" stroke-dasharray="2,4" />
+      <text x="0" y="24" stroke="none" fill="#000">Firewall Rule Change Procedure</text>
+      <text x="0" y="42" stroke="none" fill="#666">Approval steps for prod firewall changes</text>
+      <rect x="480" y="8" width="120" height="22" rx="11" /><text x="540" y="23" text-anchor="middle" font-size="11" stroke="none" fill="#000">Sys Config</text>
+      <circle cx="656" cy="18" r="10" fill="#e6e6e6" /><text x="674" y="23" stroke="none" fill="#000">M. Reyes</text>
+      <text x="760" y="23" stroke="none" fill="#000">2025-11-14</text>
+      <rect x="920" y="8" width="88" height="22" rx="11" fill="#e6e6e6" /><text x="964" y="23" text-anchor="middle" font-size="11" stroke="none" fill="#000">Draft</text>
+      <text x="1030" y="23" stroke="none" fill="#000">★</text>
+    </g>
+    <g transform="translate(264,348)">
+      <line x1="0" y1="56" x2="992" y2="56" stroke-dasharray="2,4" />
+      <text x="0" y="24" stroke="none" fill="#000">Data Retention &amp; Deletion Policy</text>
+      <text x="0" y="42" stroke="none" fill="#666">Compliance policy — annual review required</text>
+      <rect x="480" y="8" width="120" height="22" rx="11" /><text x="540" y="23" text-anchor="middle" font-size="11" stroke="none" fill="#000">Compliance</text>
+      <circle cx="656" cy="18" r="10" fill="#e6e6e6" /><text x="674" y="23" stroke="none" fill="#000">A. Kwan</text>
+      <text x="760" y="23" stroke="none" fill="#d33">2024-06-01 ⚠</text>
+      <rect x="920" y="8" width="88" height="22" rx="11" /><text x="964" y="23" text-anchor="middle" font-size="11" stroke="none" fill="#000">Published</text>
+      <text x="1030" y="23" stroke="none" fill="#000">☆</text>
+    </g>
+    <g transform="translate(264,412)">
+      <line x1="0" y1="56" x2="992" y2="56" stroke-dasharray="2,4" />
+      <text x="0" y="24" stroke="none" fill="#000">Onboarding Checklist — New IT Hires</text>
+      <text x="0" y="42" stroke="none" fill="#666">Accounts, hardware, and access provisioning</text>
+      <rect x="480" y="8" width="120" height="22" rx="11" /><text x="540" y="23" text-anchor="middle" font-size="11" stroke="none" fill="#000">Tech Guide</text>
+      <circle cx="656" cy="18" r="10" fill="#e6e6e6" /><text x="674" y="23" stroke="none" fill="#000">J. Tan</text>
+      <text x="760" y="23" stroke="none" fill="#000">2026-01-20</text>
+      <rect x="920" y="8" width="88" height="22" rx="11" /><text x="964" y="23" text-anchor="middle" font-size="11" stroke="none" fill="#000">Published</text>
+      <text x="1030" y="23" stroke="none" fill="#000">★</text>
+    </g>
+    <g transform="translate(264,476)">
+      <line x1="0" y1="56" x2="992" y2="56" stroke-dasharray="2,4" />
+      <text x="0" y="24" stroke="none" fill="#000">Backup &amp; Restore Runbook — PostgreSQL</text>
+      <text x="0" y="42" stroke="none" fill="#666">Nightly pg_dump + rsync recovery steps</text>
+      <rect x="480" y="8" width="120" height="22" rx="11" /><text x="540" y="23" text-anchor="middle" font-size="11" stroke="none" fill="#000">Sys Config</text>
+      <circle cx="656" cy="18" r="10" fill="#e6e6e6" /><text x="674" y="23" stroke="none" fill="#000">M. Reyes</text>
+      <text x="760" y="23" stroke="none" fill="#000">2026-03-11</text>
+      <rect x="920" y="8" width="88" height="22" rx="11" /><text x="964" y="23" text-anchor="middle" font-size="11" stroke="none" fill="#000">Published</text>
+      <text x="1030" y="23" stroke="none" fill="#000">☆</text>
+    </g>
+  </g>
+
+  <!-- 13: pagination -->
+  <g transform="translate(264,720)" font-size="12" stroke="none" fill="#000">
+    <text x="0" y="16">‹ Prev</text>
+    <text x="60" y="16">1</text>
+    <rect x="76" y="0" width="20" height="20" />
+    <text x="86" y="15" text-anchor="middle">2</text>
+    <text x="112" y="16">3</text>
+    <text x="140" y="16">Next ›</text>
+    <text x="900" y="16" fill="#666">Showing 1–5 of 1,248</text>
+  </g>
+
+  <!-- ANNOTATION: staleness flag -->
+  <g stroke="#d33" stroke-dasharray="4,3" fill="none">
+    <rect x="1020" y="562" width="120" height="24" rx="4" />
+  </g>
+  <text x="1150" y="580" font-size="12" stroke="none" fill="#d33">flag ← doc &gt;12mo unreviewed</text>
+</svg>
+    </div>
+    <ol class="annot">
+      <li>1 — navbar with app name</li>
+      <li>2 — global full-text search (title/body/tag, &lt;1s target)</li>
+      <li>3 — signed-in user avatar / menu</li>
+      <li>4 — category nav (Technical Guide, System Config, Compliance, All)</li>
+      <li>5 — tag filter chips</li>
+      <li>6 — favorites/bookmarks shortcut list</li>
+      <li>7 — region filter checkbox</li>
+      <li>8 — page title + result count / scope note</li>
+      <li>9 — primary "New Document" action (Contributor role)</li>
+      <li>10 — secondary filter/sort controls</li>
+      <li>11 — table column headers</li>
+      <li>12 — document rows: title/summary, category badge, owner avatar, last-reviewed date (red = stale), status badge, favorite toggle</li>
+      <li>13 — pagination footer</li>
+    </ol>
+    <div class="assumptions">Assumptions: signed-in Reader viewing published docs; stale compliance doc (2024-06-01) flagged red per "last reviewed &gt; 12mo" rule.</div>
+  </section>
+
+  <!-- SCREEN 3: DOCUMENT DETAIL / EDITOR -->
+  <section class="screen" id="s3">
+    <div class="meta-row"><h2>Screen 3 — Document Detail / Editor (versioning + compliance sign-off)</h2><span>1280×800 desktop</span></div>
+    <div class="wire-wrap">
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="800" viewBox="0 0 1280 800"
+     font-family="-apple-system, system-ui, sans-serif" fill="#fff" stroke="#000" stroke-width="1.5">
+  <rect x="0" y="0" width="1280" height="800" />
+
+  <!-- 1: navbar -->
+  <rect x="0" y="0" width="1280" height="64" />
+  <text x="24" y="38" font-size="16" stroke="none" fill="#000">IT Knowledge Base</text>
+  <circle cx="1232" cy="32" r="16" fill="#e6e6e6" />
+
+  <!-- 2: breadcrumb -->
+  <text x="24" y="92" font-size="12" stroke="none" fill="#666">Documents / Compliance / Data Retention &amp; Deletion Policy</text>
+
+  <!-- MAIN COLUMN -->
+  <!-- 3: title + status -->
+  <text x="24" y="132" font-size="28" stroke="none" fill="#000">Data Retention &amp; Deletion Policy</text>
+  <g transform="translate(24,144)">
+    <rect x="0" y="0" width="90" height="24" rx="12" />
+    <text x="45" y="16" font-size="11" text-anchor="middle" stroke="none" fill="#000">Compliance</text>
+    <rect x="98" y="0" width="80" height="24" rx="12" fill="#e6e6e6" />
+    <text x="138" y="16" font-size="11" text-anchor="middle" stroke="none" fill="#000">Draft</text>
+  </g>
+
+  <!-- 4: metadata bar -->
+  <g transform="translate(24,184)" font-size="12" stroke="none" fill="#666">
+    <text x="0" y="0">OWNER</text><text x="0" y="16" fill="#000">A. Kwan</text>
+    <text x="140" y="0">LAST REVIEWED</text><text x="140" y="16" fill="#d33">2024-06-01 (overdue)</text>
+    <text x="320" y="0">REVIEW INTERVAL</text><text x="320" y="16" fill="#000">12 months</text>
+    <text x="480" y="0">REGION</text><text x="480" y="16" fill="#000">Global</text>
+    <text x="600" y="0">TAGS</text><text x="600" y="16" fill="#000">gdpr, retention, backups</text>
+  </g>
+  <line x1="24" y1="216" x2="856" y2="216" />
+
+  <!-- 5: toolbar -->
+  <g transform="translate(24,232)" font-size="13" stroke="#000" fill="#fff">
+    <rect x="0" y="0" width="80" height="36" rx="4" /><text x="40" y="23" text-anchor="middle" stroke="none" fill="#000">Edit</text>
+    <rect x="88" y="0" width="110" height="36" rx="4" /><text x="143" y="23" text-anchor="middle" stroke="none" fill="#000">View history</text>
+    <rect x="206" y="0" width="140" height="36" rx="4" /><text x="276" y="23" text-anchor="middle" stroke="none" fill="#000">Attach file</text>
+    <rect x="654" y="0" width="178" height="36" rx="4" fill="#e6e6e6" />
+    <text x="743" y="23" text-anchor="middle" font-size="13" stroke="none" fill="#000">Request Approval →</text>
+  </g>
+
+  <!-- 6: body content -->
+  <g transform="translate(24,300)">
+    <rect x="0" y="0" width="832" height="360" />
+    <text x="16" y="28" font-size="14" stroke="none" fill="#000">1. Purpose</text>
+    <line x1="16" y1="44" x2="800" y2="44" stroke="#e6e6e6" />
+    <line x1="16" y1="60" x2="760" y2="60" stroke="#e6e6e6" />
+    <line x1="16" y1="76" x2="640" y2="76" stroke="#e6e6e6" />
+    <text x="16" y="108" font-size="14" stroke="none" fill="#000">2. Scope &amp; Applicability</text>
+    <line x1="16" y1="124" x2="800" y2="124" stroke="#e6e6e6" />
+    <line x1="16" y1="140" x2="700" y2="140" stroke="#e6e6e6" />
+    <text x="16" y="172" font-size="14" stroke="none" fill="#000">3. Retention Schedule</text>
+    <rect x="16" y="184" width="800" height="100" fill="#e6e6e6" stroke="none" />
+    <text x="416" y="238" font-size="12" text-anchor="middle" stroke="none" fill="#666">[ table placeholder ]</text>
+    <text x="16" y="312" font-size="14" stroke="none" fill="#000">4. Attachments</text>
+    <g transform="translate(16,324)">
+      <rect x="0" y="0" width="120" height="28" rx="4" />
+      <text x="60" y="18" font-size="11" text-anchor="middle" stroke="none" fill="#000">📎 config.pdf</text>
+      <rect x="132" y="0" width="140" height="28" rx="4" />
+      <text x="202" y="18" font-size="11" text-anchor="middle" stroke="none" fill="#000">📎 diagram.png</text>
+    </g>
+  </g>
+
+  <!-- RIGHT SIDEBAR -->
+  <g transform="translate(880,90)">
+    <rect x="0" y="0" width="376" height="620" />
+
+    <!-- 7: approver sign-off box -->
+    <g stroke="#000">
+      <rect x="16" y="16" width="344" height="112" rx="4" />
+      <text x="32" y="40" font-size="13" stroke="none" fill="#000">Approver sign-off required</text>
+      <text x="32" y="60" font-size="12" stroke="none" fill="#666">Compliance docs need an Approver</text>
+      <text x="32" y="76" font-size="12" stroke="none" fill="#666">before Draft → Published.</text>
+      <rect x="32" y="88" width="130" height="28" rx="4" />
+      <text x="97" y="106" font-size="12" text-anchor="middle" stroke="none" fill="#000">Approve &amp; Publish</text>
+    </g>
+
+    <!-- 8: version history -->
+    <text x="16" y="156" font-size="14" stroke="none" fill="#000">Version History</text>
+    <g font-size="12">
+      <g transform="translate(16,168)">
+        <rect x="0" y="0" width="344" height="52" fill="#e6e6e6" stroke="none" />
+        <text x="12" y="20" stroke="none" fill="#000">v3 (current) — A. Kwan</text>
+        <text x="12" y="38" stroke="none" fill="#666">2026-06-30 · edited retention table</text>
+      </g>
+      <g transform="translate(16,228)">
+        <line x1="0" y1="0" x2="344" y2="0" stroke-dasharray="2,4" />
+        <text x="12" y="20" stroke="none" fill="#000">v2 — A. Kwan</text>
+        <text x="12" y="38" stroke="none" fill="#666">2024-06-01 · annual review</text>
+        <text x="300" y="20" stroke="none" fill="#000" text-anchor="end">Diff</text>
+      </g>
+      <g transform="translate(16,272)">
+        <line x1="0" y1="0" x2="344" y2="0" stroke-dasharray="2,4" />
+        <text x="12" y="20" stroke="none" fill="#000">v1 — M. Reyes</text>
+        <text x="12" y="38" stroke="none" fill="#666">2023-05-14 · initial publish</text>
+        <text x="300" y="20" stroke="none" fill="#000" text-anchor="end">Diff</text>
+      </g>
+    </g>
+    <line x1="16" y1="330" x2="360" y2="330" />
+
+    <!-- 9: audit log -->
+    <text x="16" y="354" font-size="14" stroke="none" fill="#000">Audit Log</text>
+    <g font-size="12" stroke="none" fill="#666">
+      <text x="16" y="376">2026-06-30 — edited by A. Kwan</text>
+      <text x="16" y="394">2024-06-01 — reviewed, republished</text>
+      <text x="16" y="412">2023-05-14 — created by M. Reyes</text>
+    </g>
+    <text x="16" y="440" font-size="12" stroke="none" fill="#000">View full audit trail →</text>
+  </g>
+
+  <!-- ANNOTATION -->
+  <g stroke="#d33" stroke-dasharray="4,3" fill="none">
+    <rect x="892" y="102" width="368" height="140" rx="4" />
+  </g>
+  <text x="892" y="738" font-size="12" stroke="none" fill="#d33">7 — gates Draft→Published for Compliance category only (AC)</text>
+</svg>
+    </div>
+    <ol class="annot">
+      <li>1 — navbar (shared shell)</li>
+      <li>2 — breadcrumb: Documents / Category / Title</li>
+      <li>3 — document title + category &amp; status badges</li>
+      <li>4 — metadata bar: owner, last reviewed (overdue in red), review interval, region, tags</li>
+      <li>5 — toolbar: Edit, view history, attach file, request approval</li>
+      <li>6 — rich-text body with numbered sections and inline table/attachment placeholders</li>
+      <li>7 — approver sign-off panel — blocks Draft → Published for Compliance docs</li>
+      <li>8 — version history list with diff links (append-only, nothing hard-deleted)</li>
+      <li>9 — audit log excerpt (who/what/when) with link to full trail</li>
+    </ol>
+    <div class="assumptions">Assumptions: viewer has Approver role (sign-off box visible); doc is Compliance category so approval gate applies — Technical Guide/System Config docs would omit box 7 and publish directly.</div>
+  </section>
+
+</main>
+
+<script>
+  document.querySelectorAll('nav.tabs button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('nav.tabs button').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.target).classList.add('active');
+    });
+  });
+</script>
+
+</body>
+</html>

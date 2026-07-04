@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IT Knowledge Base — Visual Mockup (Corporate Trust)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f4f6f9;
+    --surface: #ffffff;
+    --surface-alt: #eef1f6;
+    --border: #dbe2ea;
+    --text: #1c2b3a;
+    --text-muted: #5b6b7d;
+    --primary: #1f4e8c;
+    --primary-hover: #163a68;
+    --primary-fg: #ffffff;
+    --accent: #0e7c86;
+    --success: #1c8a4b;
+    --success-bg: #e5f5ec;
+    --warning: #b8790a;
+    --warning-bg: #fbf0dd;
+    --danger: #c23838;
+    --danger-bg: #fbe8e8;
+    --draft-bg: #edf0f4;
+    --draft-fg: #5b6b7d;
+    --radius: 8px;
+    --shadow: 0 1px 2px rgba(20,30,45,.06), 0 1px 8px rgba(20,30,45,.04);
+    --font-heading: -apple-system, "Segoe UI", sans-serif;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+    color: var(--text);
+    background: #dfe4ea;
+  }
+
+  /* playground chrome (not part of the product UI) */
+  header.hero { padding: 28px 40px 20px; background: var(--surface); border-bottom: 1px solid var(--border); }
+  header.hero .crumb { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .04em; }
+  header.hero h1 { font-family: var(--font-heading); font-size: 24px; margin: 6px 0 8px; color: var(--text); }
+  header.hero p { font-size: 14px; color: var(--text-muted); max-width: 760px; margin: 0 0 14px; }
+  .pills { display: flex; gap: 8px; flex-wrap: wrap; }
+  .pill { font-size: 12px; border: 1px solid var(--border); border-radius: 999px; padding: 4px 10px; color: var(--text-muted); background: var(--surface-alt); }
+  nav.tabs {
+    position: sticky; top: 0; z-index: 5; display: flex; gap: 4px; padding: 12px 40px;
+    background: var(--surface); border-bottom: 1px solid var(--border);
+  }
+  nav.tabs button {
+    font-family: inherit; font-size: 14px; cursor: pointer; padding: 10px 18px;
+    border: 1px solid var(--border); background: var(--bg); border-radius: 8px 8px 0 0;
+    border-bottom: none; color: var(--text-muted);
+  }
+  nav.tabs button.active { background: var(--bg); color: var(--text); font-weight: 700; border-color: var(--primary); border-bottom: 2px solid var(--bg); margin-bottom: -1px; }
+  main.wrap { padding: 32px 40px 64px; max-width: 1360px; margin: 0 auto; }
+  .screen { display: none; }
+  .screen.active { display: block; }
+  .frame {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden;
+    box-shadow: 0 8px 30px rgba(20,30,45,.12);
+  }
+  .meta-row { display: flex; justify-content: space-between; align-items: baseline; margin: 20px 0 10px; }
+  .meta-row h2 { font-family: var(--font-heading); font-size: 18px; margin: 0; color: var(--text); }
+  .meta-row span { font-size: 12px; color: var(--text-muted); }
+  .notes { margin-top: 14px; font-size: 12px; color: var(--text-muted); border-left: 2px solid var(--border); padding-left: 12px; }
+
+  /* ============ PRODUCT UI (Corporate Trust theme) ============ */
+  .app { min-height: 100%; }
+  .topbar { display: flex; align-items: center; justify-content: space-between; padding: 14px 28px; background: var(--surface); border-bottom: 1px solid var(--border); }
+  .brand { display: flex; align-items: center; gap: 10px; font-family: var(--font-heading); font-weight: 700; font-size: 17px; }
+  .brand-mark { width: 28px; height: 28px; border-radius: var(--radius); background: var(--primary); color: var(--primary-fg); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; }
+  .topbar-actions { display: flex; align-items: center; gap: 14px; }
+  .scope-note { font-size: 12px; color: var(--text-muted); }
+  .avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--accent); color: var(--primary-fg); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+
+  .layout { display: grid; grid-template-columns: 220px 1fr; }
+  .sidebar { background: var(--surface); border-right: 1px solid var(--border); padding: 20px 14px; }
+  .sidebar h4 { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); margin: 16px 0 8px 8px; }
+  .sidebar h4:first-child { margin-top: 0; }
+  .nav-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: var(--radius); font-size: 14px; color: var(--text-muted); cursor: pointer; margin-bottom: 2px; }
+  .nav-item.active { background: var(--primary); color: var(--primary-fg); }
+  .nav-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: .5; }
+  .tag-row { display: flex; gap: 6px; flex-wrap: wrap; padding: 0 8px; }
+  .check-row { display: flex; align-items: center; gap: 8px; padding: 6px 8px; font-size: 13px; color: var(--text); }
+
+  .main { padding: 28px; }
+  .page-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; gap: 16px; flex-wrap: wrap; }
+  .page-head h1 { font-family: var(--font-heading); font-size: 24px; }
+  .page-head p { color: var(--text-muted); font-size: 13px; margin-top: 4px; }
+
+  .search-bar { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 14px; margin-bottom: 20px; max-width: 480px; }
+  .search-bar input { border: none; outline: none; background: transparent; color: var(--text); font-size: 14px; width: 100%; }
+  .search-bar input::placeholder { color: var(--text-muted); }
+  .search-icon { color: var(--text-muted); font-size: 14px; }
+
+  .btn { border: none; padding: 9px 16px; border-radius: var(--radius); font-size: 14px; cursor: pointer; font-weight: 600; }
+  .btn-primary { background: var(--primary); color: var(--primary-fg); }
+  .btn-ghost { background: transparent; color: var(--text); border: 1px solid var(--border); }
+  .btn-row { display: flex; gap: 10px; }
+
+  .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+  .badge-published { background: var(--success-bg); color: var(--success); }
+  .badge-draft { background: var(--draft-bg); color: var(--draft-fg); }
+  .badge-compliance { background: var(--warning-bg); color: var(--warning); }
+  .badge-danger { background: var(--danger-bg); color: var(--danger); }
+  .tag { display: inline-block; padding: 3px 9px; border-radius: var(--radius); font-size: 12px; background: var(--surface-alt); color: var(--text-muted); border: 1px solid var(--border); }
+
+  .filter-row { display: flex; gap: 10px; margin-bottom: 16px; }
+  .filter-chip { padding: 6px 14px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface); font-size: 13px; color: var(--text); }
+
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; margin-bottom: 24px; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 12px 18px; font-size: 13px; }
+  th { color: var(--text-muted); font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: .04em; border-bottom: 1px solid var(--border); }
+  tbody tr { border-bottom: 1px solid var(--border); }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--surface-alt); }
+  .doc-title-cell { font-weight: 600; color: var(--text); }
+  .doc-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; font-weight: 400; }
+  .owner-cell { display: flex; align-items: center; gap: 8px; }
+  .owner-avatar { width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: var(--primary-fg); font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+  .star { color: var(--text-muted); font-size: 15px; }
+  .star.filled { color: var(--warning); }
+
+  .pagination { display: flex; align-items: center; gap: 6px; padding: 14px 18px; font-size: 13px; color: var(--text-muted); }
+  .pagination .page-num { padding: 4px 9px; border-radius: 4px; }
+  .pagination .page-num.active { background: var(--primary); color: var(--primary-fg); }
+  .pagination .spacer { flex: 1; }
+
+  /* Login screen */
+  .login-shell { min-height: 640px; display: flex; flex-direction: column; }
+  .login-center { flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px; }
+  .login-card { width: 400px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 36px 32px; text-align: center; }
+  .login-card .brand-mark { width: 56px; height: 56px; border-radius: 14px; font-size: 22px; margin: 0 auto 18px; }
+  .login-card h2 { font-family: var(--font-heading); font-size: 19px; margin-bottom: 6px; }
+  .login-card p.sub { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; }
+  .google-btn { width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface); font-size: 14px; font-weight: 600; color: var(--text); cursor: pointer; margin-bottom: 20px; }
+  .google-btn .g-icon { width: 18px; height: 18px; border-radius: 3px; background: conic-gradient(from 45deg, #4285F4 0 25%, #34A853 25% 50%, #FBBC05 50% 75%, #EA4335 75% 100%); }
+  .divider { border: none; border-top: 1px dashed var(--border); margin: 0 0 20px; }
+  .access-note { font-size: 12px; color: var(--text-muted); line-height: 1.6; margin-bottom: 14px; }
+  .access-note strong { color: var(--text); }
+  .help-link { font-size: 12px; color: var(--primary); font-weight: 600; text-decoration: none; }
+  .login-footer { text-align: center; padding: 18px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); background: var(--surface); }
+
+  /* Detail screen */
+  .detail-grid { display: grid; grid-template-columns: 1fr 376px; gap: 24px; padding: 28px; }
+  .breadcrumb { font-size: 12px; color: var(--text-muted); margin-bottom: 10px; }
+  .detail-title { font-family: var(--font-heading); font-size: 24px; margin-bottom: 10px; }
+  .badge-row { display: flex; gap: 8px; margin-bottom: 18px; }
+  .meta-bar { display: flex; gap: 32px; flex-wrap: wrap; padding-bottom: 18px; border-bottom: 1px solid var(--border); margin-bottom: 18px; }
+  .meta-item .k { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted); margin-bottom: 3px; }
+  .meta-item .v { font-size: 13px; color: var(--text); }
+  .meta-item .v.overdue { color: var(--danger); font-weight: 600; }
+  .toolbar { display: flex; gap: 10px; margin-bottom: 20px; }
+  .toolbar .spacer { flex: 1; }
+  .body-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 24px; }
+  .body-panel h3 { font-family: var(--font-heading); font-size: 15px; margin-bottom: 10px; color: var(--text); }
+  .body-panel h3:not(:first-child) { margin-top: 22px; }
+  .fake-line { height: 9px; background: var(--surface-alt); border-radius: 3px; margin-bottom: 8px; }
+  .table-placeholder { background: var(--surface-alt); border-radius: var(--radius); padding: 30px; text-align: center; font-size: 12px; color: var(--text-muted); margin: 4px 0 4px; }
+  .attachment-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface-alt); font-size: 12px; color: var(--text); margin-right: 8px; }
+
+  .approval-panel { border: 1px solid var(--warning); background: var(--warning-bg); border-radius: var(--radius); padding: 16px; margin-bottom: 20px; }
+  .approval-panel .title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+  .approval-panel .desc { font-size: 12px; color: var(--text-muted); margin-bottom: 12px; line-height: 1.5; }
+  .btn-warning { background: var(--warning); color: #fff; border: none; padding: 8px 14px; border-radius: var(--radius); font-size: 12px; font-weight: 700; cursor: pointer; }
+
+  .side-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px; margin-bottom: 20px; }
+  .side-panel h3 { font-family: var(--font-heading); font-size: 14px; margin-bottom: 12px; color: var(--text); }
+  .version-item { padding: 10px 12px; border-radius: var(--radius); margin-bottom: 8px; font-size: 12px; }
+  .version-item.current { background: var(--surface-alt); }
+  .version-item .vline1 { font-weight: 700; color: var(--text); margin-bottom: 3px; }
+  .version-item .vline2 { color: var(--text-muted); display: flex; justify-content: space-between; }
+  .version-item .diff-link { color: var(--primary); font-weight: 600; }
+  .audit-entry { font-size: 12px; color: var(--text-muted); padding: 6px 0; border-bottom: 1px dashed var(--border); }
+  .audit-entry:last-of-type { border-bottom: none; }
+  .full-audit-link { font-size: 12px; color: var(--primary); font-weight: 600; margin-top: 8px; display: inline-block; }
+
+  footer.app-footer { padding: 16px 28px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border); background: var(--surface); }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="crumb">IT Knowledge Base · Visual mockup — Corporate Trust theme</div>
+  <h1>Visual Mockup Playground</h1>
+  <p>High-fidelity pass of the three PRD wireframe screens (Login, Document Library, Document Detail/Editor), skinned in the Corporate Trust design system — navy primary, status-coded badges, 8px radius, soft card elevation.</p>
+  <div class="pills">
+    <span class="pill">3 screens</span>
+    <span class="pill">Desktop · 1280px</span>
+    <span class="pill">Theme: Corporate Trust</span>
+    <span class="pill">Click tabs to switch</span>
+  </div>
+</header>
+
+<nav class="tabs">
+  <button class="active" data-target="m1">1 · Login</button>
+  <button data-target="m2">2 · Document Library</button>
+  <button data-target="m3">3 · Document Detail / Editor</button>
+</nav>
+
+<main class="wrap">
+
+  <!-- SCREEN 1: LOGIN -->
+  <section class="screen active" id="m1">
+    <div class="meta-row"><h2>Screen 1 — Login (Google OAuth, access-restricted)</h2><span>1280px desktop</span></div>
+    <div class="frame">
+      <div class="app login-shell">
+        <div class="topbar">
+          <div class="brand"><div class="brand-mark">KB</div>IT Knowledge Base</div>
+          <div class="scope-note">Internal · IT staff only</div>
+        </div>
+        <div class="login-center">
+          <div class="login-card">
+            <div class="brand-mark">KB</div>
+            <h2>IT Knowledge Base</h2>
+            <p class="sub">Sign in with your company Google account</p>
+            <button class="google-btn"><span class="g-icon"></span> Sign in with Google</button>
+            <hr class="divider">
+            <p class="access-note">Access is limited to accounts in the <strong>IT Google Workspace group</strong>.<br>No username/password login is available.</p>
+            <a class="help-link" href="#">Trouble signing in? Contact IT Admin</a>
+          </div>
+        </div>
+        <div class="login-footer">© Internal IT Knowledge Base — not for external distribution</div>
+      </div>
+    </div>
+    <div class="notes">Signed-out state. Users failing the group check are redirected to a separate Access Denied screen (not shown) rather than seeing an error here, per PRD §2. Badge/status colors are not used on this screen — only brand and neutral tokens.</div>
+  </section>
+
+  <!-- SCREEN 2: DOCUMENT LIBRARY -->
+  <section class="screen" id="m2">
+    <div class="meta-row"><h2>Screen 2 — Document Library (browse / search / categorize)</h2><span>1280px desktop</span></div>
+    <div class="frame">
+      <div class="app">
+        <div class="topbar">
+          <div class="brand"><div class="brand-mark">KB</div>IT Knowledge Base</div>
+          <div class="search-bar" style="margin:0;width:420px;max-width:none;">
+            <span class="search-icon">&#128269;</span>
+            <input type="text" placeholder="Search by title, body, or tag…">
+          </div>
+          <div class="topbar-actions"><div class="avatar">TG</div></div>
+        </div>
+        <div class="layout">
+          <div class="sidebar">
+            <h4>Categories</h4>
+            <div class="nav-item active"><span class="nav-dot"></span> All Documents</div>
+            <div class="nav-item"><span class="nav-dot"></span> Technical Guides</div>
+            <div class="nav-item"><span class="nav-dot"></span> System Configuration</div>
+            <div class="nav-item"><span class="nav-dot"></span> Compliance</div>
+            <h4>Tags</h4>
+            <div class="tag-row"><span class="tag">vpn</span><span class="tag">network</span><span class="tag">backup</span></div>
+            <h4>Favorites</h4>
+            <div class="nav-item">★ Onboarding Checklist</div>
+            <div class="nav-item">★ Password Reset SOP</div>
+            <h4>Region</h4>
+            <div class="check-row"><input type="checkbox" checked> All regions</div>
+          </div>
+          <div class="main">
+            <div class="page-head">
+              <div>
+                <h1>All Documents</h1>
+                <p>1,248 documents · showing published only</p>
+              </div>
+              <button class="btn btn-primary">+ New Document</button>
+            </div>
+            <div class="filter-row">
+              <span class="filter-chip">Category ▾</span>
+              <span class="filter-chip">Status ▾</span>
+              <span class="filter-chip">Last reviewed ▾</span>
+            </div>
+            <div class="panel">
+              <table>
+                <thead>
+                  <tr><th>Title</th><th>Category</th><th>Owner</th><th>Last reviewed</th><th>Status</th><th></th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><div class="doc-title-cell">VPN Client Setup — Windows &amp; macOS<div class="doc-sub">Step-by-step VPN configuration for remote access</div></div></td>
+                    <td><span class="tag">Tech Guide</span></td>
+                    <td><div class="owner-cell"><div class="owner-avatar">JT</div>J. Tan</div></td>
+                    <td>2026-05-02</td>
+                    <td><span class="badge badge-published">Published</span></td>
+                    <td><span class="star">☆</span></td>
+                  </tr>
+                  <tr>
+                    <td><div class="doc-title-cell">Firewall Rule Change Procedure<div class="doc-sub">Approval steps for prod firewall changes</div></div></td>
+                    <td><span class="tag">Sys Config</span></td>
+                    <td><div class="owner-cell"><div class="owner-avatar">MR</div>M. Reyes</div></td>
+                    <td>2025-11-14</td>
+                    <td><span class="badge badge-draft">Draft</span></td>
+                    <td><span class="star filled">★</span></td>
+                  </tr>
+                  <tr>
+                    <td><div class="doc-title-cell">Data Retention &amp; Deletion Policy<div class="doc-sub">Compliance policy — annual review required</div></div></td>
+                    <td><span class="tag">Compliance</span></td>
+                    <td><div class="owner-cell"><div class="owner-avatar">AK</div>A. Kwan</div></td>
+                    <td><span class="badge badge-danger">2024-06-01 ⚠</span></td>
+                    <td><span class="badge badge-published">Published</span></td>
+                    <td><span class="star">☆</span></td>
+                  </tr>
+                  <tr>
+                    <td><div class="doc-title-cell">Onboarding Checklist — New IT Hires<div class="doc-sub">Accounts, hardware, and access provisioning</div></div></td>
+                    <td><span class="tag">Tech Guide</span></td>
+                    <td><div class="owner-cell"><div class="owner-avatar">JT</div>J. Tan</div></td>
+                    <td>2026-01-20</td>
+                    <td><span class="badge badge-published">Published</span></td>
+                    <td><span class="star filled">★</span></td>
+                  </tr>
+                  <tr>
+                    <td><div class="doc-title-cell">Backup &amp; Restore Runbook — PostgreSQL<div class="doc-sub">Nightly pg_dump + rsync recovery steps</div></div></td>
+                    <td><span class="tag">Sys Config</span></td>
+                    <td><div class="owner-cell"><div class="owner-avatar">MR</div>M. Reyes</div></td>
+                    <td>2026-03-11</td>
+                    <td><span class="badge badge-published">Published</span></td>
+                    <td><span class="star">☆</span></td>
+                  </tr>
+                </tbody>
+              </table>
+              <div class="pagination">
+                <span>‹ Prev</span>
+                <span class="page-num active">1</span>
+                <span class="page-num">2</span>
+                <span class="page-num">3</span>
+                <span>Next ›</span>
+                <span class="spacer"></span>
+                <span>Showing 1–5 of 1,248</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <footer class="app-footer">Access restricted to IT Google Workspace group · All actions are audit-logged</footer>
+      </div>
+    </div>
+    <div class="notes">Signed-in Reader viewing published docs. The Data Retention row shows the stale-review rule: <code>last reviewed &gt; 12mo</code> renders the date as a danger badge instead of plain text, per theme's "status legibility first" principle.</div>
+  </section>
+
+  <!-- SCREEN 3: DOCUMENT DETAIL / EDITOR -->
+  <section class="screen" id="m3">
+    <div class="meta-row"><h2>Screen 3 — Document Detail / Editor (versioning + compliance sign-off)</h2><span>1280px desktop</span></div>
+    <div class="frame">
+      <div class="app">
+        <div class="topbar">
+          <div class="brand"><div class="brand-mark">KB</div>IT Knowledge Base</div>
+          <div class="topbar-actions"><div class="avatar">TG</div></div>
+        </div>
+        <div class="detail-grid">
+          <div>
+            <div class="breadcrumb">Documents / Compliance / Data Retention &amp; Deletion Policy</div>
+            <div class="detail-title">Data Retention &amp; Deletion Policy</div>
+            <div class="badge-row">
+              <span class="badge badge-compliance">Compliance</span>
+              <span class="badge badge-draft">Draft</span>
+            </div>
+            <div class="meta-bar">
+              <div class="meta-item"><div class="k">Owner</div><div class="v">A. Kwan</div></div>
+              <div class="meta-item"><div class="k">Last reviewed</div><div class="v overdue">2024-06-01 (overdue)</div></div>
+              <div class="meta-item"><div class="k">Review interval</div><div class="v">12 months</div></div>
+              <div class="meta-item"><div class="k">Region</div><div class="v">Global</div></div>
+              <div class="meta-item"><div class="k">Tags</div><div class="v">gdpr, retention, backups</div></div>
+            </div>
+            <div class="toolbar">
+              <button class="btn btn-ghost">Edit</button>
+              <button class="btn btn-ghost">View history</button>
+              <button class="btn btn-ghost">Attach file</button>
+              <span class="spacer"></span>
+              <button class="btn btn-ghost">Request Approval →</button>
+            </div>
+            <div class="body-panel">
+              <h3>1. Purpose</h3>
+              <div class="fake-line" style="width:96%"></div>
+              <div class="fake-line" style="width:90%"></div>
+              <div class="fake-line" style="width:70%"></div>
+              <h3>2. Scope &amp; Applicability</h3>
+              <div class="fake-line" style="width:94%"></div>
+              <div class="fake-line" style="width:78%"></div>
+              <h3>3. Retention Schedule</h3>
+              <div class="table-placeholder">[ table placeholder ]</div>
+              <h3>4. Attachments</h3>
+              <span class="attachment-chip">📎 config.pdf</span>
+              <span class="attachment-chip">📎 diagram.png</span>
+            </div>
+          </div>
+          <div>
+            <div class="approval-panel">
+              <div class="title">Approver sign-off required</div>
+              <div class="desc">Compliance docs need an Approver before Draft → Published.</div>
+              <button class="btn-warning">Approve &amp; Publish</button>
+            </div>
+            <div class="side-panel">
+              <h3>Version History</h3>
+              <div class="version-item current">
+                <div class="vline1">v3 (current) — A. Kwan</div>
+                <div class="vline2">2026-06-30 · edited retention table</div>
+              </div>
+              <div class="version-item">
+                <div class="vline1">v2 — A. Kwan</div>
+                <div class="vline2">2024-06-01 · annual review <span class="diff-link">Diff</span></div>
+              </div>
+              <div class="version-item">
+                <div class="vline1">v1 — M. Reyes</div>
+                <div class="vline2">2023-05-14 · initial publish <span class="diff-link">Diff</span></div>
+              </div>
+            </div>
+            <div class="side-panel">
+              <h3>Audit Log</h3>
+              <div class="audit-entry">2026-06-30 — edited by A. Kwan</div>
+              <div class="audit-entry">2024-06-01 — reviewed, republished</div>
+              <div class="audit-entry">2023-05-14 — created by M. Reyes</div>
+              <a class="full-audit-link" href="#">View full audit trail →</a>
+            </div>
+          </div>
+        </div>
+        <footer class="app-footer">Access restricted to IT Google Workspace group · All actions are audit-logged</footer>
+      </div>
+    </div>
+    <div class="notes">Viewer has Approver role, so the sign-off panel is visible — its warning-family color (amber) signals "needs action" distinct from the danger-family overdue date above it. Doc is Compliance category, so the approval gate applies; Technical Guide/System Config docs would omit this panel and publish directly.</div>
+  </section>
+
+</main>
+
+<script>
+  document.querySelectorAll('nav.tabs button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('nav.tabs button').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.target).classList.add('active');
+    });
+  });
+</script>
+
+</body>
+</html>
