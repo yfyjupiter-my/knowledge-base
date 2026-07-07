@@ -13,9 +13,6 @@ export function AuditLogPanel({ entries }: { entries: AuditEntry[] }) {
           {entry.date} — {entry.entry}
         </div>
       ))}
-      <a href="#" className="mt-2 inline-block text-xs font-semibold text-primary">
-        View full audit trail →
-      </a>
     </Panel>
   );
 }

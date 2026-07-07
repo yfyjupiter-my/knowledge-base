@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { Topbar } from "@/components/ui/Topbar";
 import { Button } from "@/components/ui/Button";
 import { DocumentDetailHeader } from "@/components/screens/DocumentDetailHeader";
@@ -32,13 +33,11 @@ export default async function DocumentDetailPage({
         <div>
           <DocumentDetailHeader doc={doc} />
           <div className="mb-5 flex gap-2.5">
-            <Button variant="ghost">Edit</Button>
-            <Button variant="ghost">View history</Button>
-            <Button variant="ghost">Attach file</Button>
-            <span className="flex-1" />
-            <Button variant="ghost">Request Approval →</Button>
+            <Link href={`/docs/${doc.id}/edit`}>
+              <Button variant="ghost">Edit</Button>
+            </Link>
           </div>
-          <DocumentBody attachments={doc.attachments} />
+          <DocumentBody content={doc.content} attachments={doc.attachments} />
         </div>
         <div>
           {doc.category === "Compliance" && doc.status === "draft" && (

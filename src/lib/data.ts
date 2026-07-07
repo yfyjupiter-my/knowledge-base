@@ -18,6 +18,7 @@ interface DocumentRow {
   region: string;
   review_interval: string | null;
   attachments: string[];
+  content: string;
 }
 
 function toDocument(row: DocumentRow, favoritedIds: Set<string>): Document {
@@ -38,6 +39,7 @@ function toDocument(row: DocumentRow, favoritedIds: Set<string>): Document {
     breadcrumb: ["Documents", sidebarLabel, row.title],
     reviewInterval: row.review_interval ?? undefined,
     attachments: row.attachments && row.attachments.length > 0 ? row.attachments : undefined,
+    content: row.content ?? "",
   };
 }
 

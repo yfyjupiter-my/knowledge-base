@@ -31,6 +31,7 @@ export interface Document {
   versions?: DocVersion[];
   auditLog?: AuditEntry[];
   attachments?: string[];
+  content: string;
 }
 
 export const documents: Document[] = [
@@ -47,6 +48,7 @@ export const documents: Document[] = [
     tags: ["vpn", "network"],
     region: "Global",
     breadcrumb: ["Documents", "Technical Guides", "VPN Client Setup — Windows & macOS"],
+    content: "",
   },
   {
     id: "firewall-rule-change-procedure",
@@ -61,6 +63,7 @@ export const documents: Document[] = [
     tags: ["network"],
     region: "Global",
     breadcrumb: ["Documents", "System Configuration", "Firewall Rule Change Procedure"],
+    content: "",
   },
   {
     id: "data-retention-policy",
@@ -87,6 +90,7 @@ export const documents: Document[] = [
       { date: "2023-05-14", entry: "created by M. Reyes" },
     ],
     attachments: ["config.pdf", "diagram.png"],
+    content: "",
   },
   {
     id: "onboarding-checklist",
@@ -101,6 +105,7 @@ export const documents: Document[] = [
     tags: ["onboarding"],
     region: "Global",
     breadcrumb: ["Documents", "Technical Guides", "Onboarding Checklist — New IT Hires"],
+    content: "",
   },
   {
     id: "backup-restore-runbook",
@@ -115,6 +120,7 @@ export const documents: Document[] = [
     tags: ["backup"],
     region: "Global",
     breadcrumb: ["Documents", "System Configuration", "Backup & Restore Runbook — PostgreSQL"],
+    content: "",
   },
 ];
 

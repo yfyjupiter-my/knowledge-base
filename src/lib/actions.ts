@@ -144,3 +144,65 @@ export async function createDocument(
   revalidatePath("/library");
   redirect(`/docs/${id}`);
 }
+
+export interface UpdateDocumentState {
+  error?: string;
+}
+
+export async function updateDocument(
+  docId: string,
+  _prev: UpdateDocumentState,
+  formData: FormData,
+): Promise<UpdateDocumentState> {
+  const { name } = await requireUser();
+
+  const title = String(formData.get("title") ?? "").trim();
+  const subtitle = String(formData.get("subtitle") ?? "").trim();
+  const content = String(formData.get("content") ?? "");
+  const note = String(formData.get("note") ?? "").trim();
+  const tags = String(formData.get("tags") ?? "")
+    .split(",")
+    .map((t) => t.trim().toLowerCase())
+    .filter(Boolean);
+
+  if (!title) return { error: "Title is required." };
+  if (!note) return { error: "A short note on what changed is required." };
+
+  const { error } = await supabase
+    .from("kb_documents")
+    .update({ title, subtitle, tags, content })
+    .eq("id", docId);
+  if (error) return { error: `Failed to save changes: ${error.message}` };
+
+  const { count } = await supabase
+    .from("kb_doc_versions")
+    .select("id", { count: "exact", head: true })
+    .eq("doc_id", docId);
+  const nextVersion = `v${(count ?? 0) + 1}`;
+
+  const { error: unsetError } = await supabase
+    .from("kb_doc_versions")
+    .update({ current: false })
+    .eq("doc_id", docId)
+    .eq("current", true);
+  if (unsetError) throw new Error(`Failed to update version history: ${unsetError.message}`);
+
+  const { error: versionError } = await supabase.from("kb_doc_versions").insert({
+    doc_id: docId,
+    version: nextVersion,
+    author: name,
+    date: today(),
+    note,
+    current: true,
+  });
+  if (versionError) throw new Error(`Failed to record new version: ${versionError.message}`);
+
+  const { error: auditError } = await supabase
+    .from("kb_audit_log")
+    .insert({ doc_id: docId, date: today(), entry: `edited by ${name}` });
+  if (auditError) throw new Error(`Failed to write audit entry: ${auditError.message}`);
+
+  revalidatePath("/library");
+  revalidatePath(`/docs/${docId}`);
+  redirect(`/docs/${docId}`);
+}
