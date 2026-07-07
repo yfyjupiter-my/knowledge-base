@@ -24,7 +24,7 @@ export async function setFavorite(docId: string, favorited: boolean): Promise<vo
   if (favorited) {
     const { error } = await supabase
       .from("kb_favorites")
-      .upsert({ user_email: email, doc_id: docId });
+      .upsert({ user_email: email, doc_id: docId }, { onConflict: "user_email,doc_id" });
     if (error) throw new Error(`Failed to add favorite: ${error.message}`);
   } else {
     const { error } = await supabase
@@ -45,12 +45,17 @@ export async function approveDocument(docId: string): Promise<void> {
     throw new Error("Only approvers can approve and publish documents");
   }
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("kb_documents")
     .update({ status: "published", last_reviewed: today(), review_overdue: false })
     .eq("id", docId)
-    .eq("status", "draft");
+    .eq("status", "draft")
+    .select("id");
   if (error) throw new Error(`Failed to publish document: ${error.message}`);
+  if (!data || data.length === 0) {
+    // Already published (or missing) — nothing changed, so don't record a new approval.
+    return;
+  }
 
   const { error: auditError } = await supabase
     .from("kb_audit_log")
@@ -119,7 +124,7 @@ export async function createDocument(
     return { error: `Failed to create document: ${error.message}` };
   }
 
-  await supabase.from("kb_doc_versions").insert({
+  const { error: versionError } = await supabase.from("kb_doc_versions").insert({
     doc_id: id,
     version: "v1",
     author: name,
@@ -127,11 +132,14 @@ export async function createDocument(
     note: "initial draft",
     current: true,
   });
-  await supabase.from("kb_audit_log").insert({
+  if (versionError) throw new Error(`Failed to create initial version: ${versionError.message}`);
+
+  const { error: auditError } = await supabase.from("kb_audit_log").insert({
     doc_id: id,
     date: today(),
     entry: `created by ${name}`,
   });
+  if (auditError) throw new Error(`Failed to write audit entry: ${auditError.message}`);
 
   revalidatePath("/library");
   redirect(`/docs/${id}`);

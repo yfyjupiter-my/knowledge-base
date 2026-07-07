@@ -33,11 +33,11 @@ function toDocument(row: DocumentRow, favoritedIds: Set<string>): Document {
     reviewOverdue: row.review_overdue,
     status: row.status,
     favorited: favoritedIds.has(row.id),
-    tags: row.tags,
+    tags: row.tags ?? [],
     region: row.region,
     breadcrumb: ["Documents", sidebarLabel, row.title],
     reviewInterval: row.review_interval ?? undefined,
-    attachments: row.attachments.length > 0 ? row.attachments : undefined,
+    attachments: row.attachments && row.attachments.length > 0 ? row.attachments : undefined,
   };
 }
 

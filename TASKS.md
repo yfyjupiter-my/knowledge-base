@@ -101,7 +101,65 @@ server-side store for the prototype. **Confirm approach before starting.**
 
 ---
 
+## Phase 5 — Document editing & attachments (needs decisions — DECISIONS REQUIRED)
+
+`docs/[id]/page.tsx` currently renders four dead buttons (`Edit`, `View history`,
+`Attach file`, `Request Approval →`) plus a static `<a href="#">` in
+`AuditLogPanel` — all left over from the original mockup, wired to nothing.
+`DocumentBody.tsx` also renders hardcoded fake placeholder text (`FakeLine`
+bars under "Purpose" / "Scope & Applicability" / "Retention Schedule") because
+there is no `content` field anywhere in the schema. This phase makes document
+content real and editable.
+
+> **Decisions needed before starting** (mirrors the Phase 4 pattern — confirm,
+> then check these off as resolved):
+> - **Content format**: plain text / Markdown / rich text? (Markdown rendered
+>   server-side is the lightest lift and fits the SOP-style content.)
+> - **Edit → version/status semantics**: does saving an edit always cut a new
+>   `kb_doc_versions` row? Does editing a *published* Compliance doc revert
+>   `status` to `draft` (forcing re-approval), or can approvers edit in place?
+> - **Who can edit**: viewer read-only is clear: does editor role suffice, or
+>   is editor+approver required per `getUserRole`?
+> - **Attachments**: real file upload needs a storage backend (Supabase
+>   Storage bucket + policies) — is that in scope now, or does "Attach file"
+>   stay stubbed until a storage decision is made?
+> - **"Request Approval"**: is this a distinct step from the existing
+>   `ApprovalPanel` (which already shows to approvers whenever a Compliance
+>   doc is in `draft`), e.g. an audit-log breadcrumb ("requested by X") with
+>   no notification system yet — or should the button be removed as
+>   redundant?
+> - **"View history"**: the version history panel already renders
+>   unconditionally in the sidebar when `doc.versions` exists — decide
+>   whether this button should be removed (redundant) or repurposed (e.g.
+>   deep-link/scroll, or a future full-history route).
+
+- [ ] Add `content` column to `kb_documents` (format per decision above);
+      backfill existing rows; add to `DocumentRow` / `Document` types in
+      `src/lib/data.ts` and `src/lib/mock-data.ts`.
+- [ ] Render real `content` in `DocumentBody.tsx`, replacing the `FakeLine`
+      placeholders (keep the section headings only if the content model
+      preserves them, otherwise render the raw body).
+- [ ] `src/app/docs/[id]/edit/page.tsx` (or a modal) — Client Component form
+      seeded with the current title/subtitle/tags/content.
+- [ ] `updateDocument` server action in `src/lib/actions.ts`: role-gate per
+      the decision above, write the new `content`, append a `kb_doc_versions`
+      row (author/date/note from a required "what changed" field), append a
+      `kb_audit_log` entry (`edited by ${name}`), apply the status-reversion
+      rule for published Compliance docs if decided, `revalidatePath` both
+      `/library` and `/docs/${id}`.
+- [ ] Wire the `Edit` button in `docs/[id]/page.tsx` to the new route/modal,
+      gated so viewers don't see it (or see it disabled).
+- [ ] Resolve `Attach file`: either wire to real upload (needs the storage
+      decision) or remove the button until that's scheduled.
+- [ ] Resolve `Request Approval →` and `View history` per the decisions above
+      — implement or remove; no dead buttons should remain on this page.
+- [ ] Remove or wire the static `View full audit trail →` link in
+      `AuditLogPanel.tsx`.
+
+---
+
 ## Suggested order
 
 Phase 0 → 1 → 2 → 3 deliver a fully navigable read-only app with no backend needed.
 Phase 4 is a separate track gated on the data-store decision.
+Phase 5 is a separate track gated on the content/edit-semantics decisions above.
