@@ -79,6 +79,43 @@ export async function approveDocument(docId: string): Promise<void> {
   revalidatePath(`/docs/${docId}`);
 }
 
+/**
+ * Soft-deletes a document by archiving it. A hard DELETE would cascade into
+ * kb_doc_versions and kb_audit_log, destroying the approval trail that
+ * Compliance docs depend on, so the row is retained and the archival is itself
+ * recorded in the audit log.
+ */
+export async function deleteDocument(docId: string): Promise<void> {
+  const { name } = await requireUser();
+
+  const { data, error } = await supabase
+    .from("kb_documents")
+    .update({ status: "archived" })
+    .eq("id", docId)
+    .neq("status", "archived")
+    .select("id");
+  if (error) {
+    logDbError("archive document", error);
+    throw new Error("Failed to delete document.");
+  }
+  // Already archived (or missing) — don't log a second archival.
+  if (!data || data.length === 0) {
+    redirect("/library");
+  }
+
+  const { error: auditError } = await supabase
+    .from("kb_audit_log")
+    .insert({ doc_id: docId, date: today(), entry: `deleted by ${name}` });
+  if (auditError) {
+    logDbError("write audit entry (delete)", auditError);
+    throw new Error("Failed to record the deletion.");
+  }
+
+  revalidatePath("/library");
+  revalidatePath(`/docs/${docId}`);
+  redirect("/library");
+}
+
 function slugify(title: string): string {
   return title
     .toLowerCase()
@@ -200,7 +237,7 @@ export async function updateDocument(
     logDbError("load document for edit", fetchError);
     return { error: "Failed to save changes. Please try again." };
   }
-  if (!existing) return { error: "Document not found." };
+  if (!existing || existing.status === "archived") return { error: "Document not found." };
 
   const revertToDraft =
     existing.category === "Compliance" && existing.status === "published";

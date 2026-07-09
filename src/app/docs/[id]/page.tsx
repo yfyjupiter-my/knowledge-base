@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Topbar } from "@/components/ui/Topbar";
 import { Button } from "@/components/ui/Button";
 import { DocumentDetailHeader } from "@/components/screens/DocumentDetailHeader";
+import { DeleteDocumentButton } from "@/components/screens/DeleteDocumentButton";
 import { DocumentBody } from "@/components/screens/DocumentBody";
 import { ApprovalPanel } from "@/components/screens/ApprovalPanel";
 import { VersionHistoryPanel } from "@/components/screens/VersionHistoryPanel";
@@ -39,6 +40,7 @@ export default async function DocumentDetailPage({
                 <Link href={`/docs/${doc.id}/edit`}>
                   <Button variant="ghost">Edit</Button>
                 </Link>
+                <DeleteDocumentButton docId={doc.id} title={doc.title} />
                 <BackButton />
               </>
             }

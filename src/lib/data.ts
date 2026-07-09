@@ -1,7 +1,14 @@
 import { supabase } from "./supabase";
 import { logDbError } from "./errors";
 import { categories } from "./categories";
-import type { AuditEntry, DocCategoryLabel, DocStatus, Document, DocVersion } from "./mock-data";
+import type {
+  AuditEntry,
+  DocCategoryLabel,
+  DocStatus,
+  Document,
+  DocVersion,
+  StoredDocStatus,
+} from "./mock-data";
 
 export type UserRole = "viewer" | "editor" | "approver";
 
@@ -14,7 +21,7 @@ interface DocumentRow {
   owner_initials: string;
   last_reviewed: string;
   review_overdue: boolean;
-  status: DocStatus;
+  status: StoredDocStatus;
   tags: string[];
   region: string;
   review_interval: string | null;
@@ -33,7 +40,8 @@ function toDocument(row: DocumentRow, favoritedIds: Set<string>): Document {
     owner: { name: row.owner_name, initials: row.owner_initials },
     lastReviewed: row.last_reviewed,
     reviewOverdue: row.review_overdue,
-    status: row.status,
+    // Safe: both callers exclude archived rows before reaching here.
+    status: row.status as DocStatus,
     favorited: favoritedIds.has(row.id),
     tags: row.tags ?? [],
     region: row.region,
@@ -59,7 +67,12 @@ async function getFavoritedIds(userEmail: string | undefined): Promise<Set<strin
 
 export async function getDocuments(userEmail: string | undefined): Promise<Document[]> {
   const [{ data, error }, favoritedIds] = await Promise.all([
-    supabase.from("kb_documents").select("*").order("created_at").order("id"),
+    supabase
+      .from("kb_documents")
+      .select("*")
+      .neq("status", "archived")
+      .order("created_at")
+      .order("id"),
     getFavoritedIds(userEmail),
   ]);
   if (error) {
@@ -94,6 +107,8 @@ export async function getDocument(
     throw new Error("Failed to load document.");
   }
   if (!docResult.data) return null;
+  // Archived (soft-deleted) docs read as missing; the row and its trail survive.
+  if (docResult.data.status === "archived") return null;
   if (versionsResult.error) {
     logDbError("load versions", versionsResult.error);
     throw new Error("Failed to load document.");

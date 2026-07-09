@@ -1,11 +1,12 @@
 import type { ButtonHTMLAttributes } from "react";
 
-type ButtonVariant = "primary" | "ghost" | "warning";
+type ButtonVariant = "primary" | "ghost" | "warning" | "danger";
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary: "bg-primary text-primary-fg hover:bg-primary-hover",
   ghost: "border border-border bg-transparent text-text hover:bg-surface-alt",
   warning: "bg-warning text-white font-bold hover:opacity-90",
+  danger: "bg-danger text-white font-semibold hover:opacity-90",
 };
 
 export function Button({
@@ -15,7 +16,7 @@ export function Button({
 }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: ButtonVariant }) {
   return (
     <button
-      className={`rounded-kb px-4 py-2.5 text-sm font-semibold cursor-pointer transition-colors ${variantClasses[variant]} ${className}`}
+      className={`rounded-kb px-4 py-2.5 text-sm font-semibold cursor-pointer transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${variantClasses[variant]} ${className}`}
       {...props}
     />
   );

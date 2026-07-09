@@ -1,4 +1,9 @@
 export type DocStatus = "published" | "draft";
+/**
+ * Status as stored in the database. Archived docs are soft-deleted: the data
+ * layer never surfaces them, so the UI only ever sees a DocStatus.
+ */
+export type StoredDocStatus = DocStatus | "archived";
 export type DocCategoryLabel = "Tech Guide" | "Sys Config" | "Compliance";
 
 export interface DocVersion {
