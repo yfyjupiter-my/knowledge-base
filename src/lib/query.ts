@@ -11,7 +11,7 @@ export interface QueryParams {
   page?: string;
 }
 
-export const PAGE_SIZE = 3;
+export const PAGE_SIZE = 10;
 
 export const FILTER_PARAM_KEYS = [
   "q",
