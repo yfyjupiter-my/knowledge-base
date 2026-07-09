@@ -107,6 +107,22 @@ function renderTable(lines: string[], key: number): ReactNode {
 
 const INLINE_PATTERN = /\[([^\]]+)\]\(([^)]+)\)|\*\*([^*]+)\*\*|`([^`]+)`|\*([^*]+)\*/g;
 
+/**
+ * Returns a safe href for a Markdown link, or null if the URL uses a
+ * disallowed scheme (e.g. `javascript:`, `data:`, `vbscript:`). React does not
+ * sanitize `href`, so unsafe schemes here would execute on click — only allow
+ * http(s)/mailto and relative (`/`, `#`, `?`) links.
+ */
+function safeHref(raw: string): string | null {
+  const url = raw.trim();
+  // Relative links (in-app paths, anchors, query-only) are safe.
+  if (/^(?:[/#?])/.test(url)) return url;
+  // Absolute URLs: allow only an explicit safe scheme.
+  if (/^(?:https?:|mailto:)/i.test(url)) return url;
+  // Anything with a scheme we didn't allow (or a control-char-obfuscated one) is dropped.
+  return null;
+}
+
 function parseInline(text: string): ReactNode[] {
   const nodes: ReactNode[] = [];
   const pattern = new RegExp(INLINE_PATTERN);
@@ -116,11 +132,22 @@ function parseInline(text: string): ReactNode[] {
   while ((match = pattern.exec(text))) {
     if (match.index > lastIndex) nodes.push(text.slice(lastIndex, match.index));
     if (match[1] !== undefined) {
-      nodes.push(
-        <a key={key++} href={match[2]} className="text-primary underline">
-          {match[1]}
-        </a>,
-      );
+      const href = safeHref(match[2]);
+      if (href === null) {
+        // Disallowed scheme — render the link text only, never a live anchor.
+        nodes.push(<span key={key++}>{match[1]}</span>);
+      } else {
+        nodes.push(
+          <a
+            key={key++}
+            href={href}
+            rel="noopener noreferrer"
+            className="text-primary underline"
+          >
+            {match[1]}
+          </a>,
+        );
+      }
     } else if (match[3] !== undefined) {
       nodes.push(<strong key={key++}>{match[3]}</strong>);
     } else if (match[4] !== undefined) {
