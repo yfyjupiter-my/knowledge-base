@@ -7,11 +7,14 @@ const categoryBadgeVariant = {
   Compliance: "compliance",
 } as const;
 
-export function DocumentDetailHeader({ doc }: { doc: Document }) {
+export function DocumentDetailHeader({ doc, actions }: { doc: Document; actions?: React.ReactNode }) {
   return (
     <>
       <div className="mb-2.5 text-xs text-text-muted">{doc.breadcrumb.join(" / ")}</div>
-      <h1 className="mb-2.5 text-[24px] font-bold text-text">{doc.title}</h1>
+      <div className="mb-2.5 flex items-center justify-between gap-4">
+        <h1 className="text-[24px] font-bold text-text">{doc.title}</h1>
+        {actions && <div className="flex items-center gap-2.5">{actions}</div>}
+      </div>
       <div className="mb-4.5 flex gap-2">
         <Badge variant={categoryBadgeVariant[doc.category]}>{doc.category}</Badge>
         <Badge variant={doc.status}>{doc.status === "published" ? "Published" : "Draft"}</Badge>

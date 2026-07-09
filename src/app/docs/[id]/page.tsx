@@ -7,6 +7,7 @@ import { DocumentBody } from "@/components/screens/DocumentBody";
 import { ApprovalPanel } from "@/components/screens/ApprovalPanel";
 import { VersionHistoryPanel } from "@/components/screens/VersionHistoryPanel";
 import { AuditLogPanel } from "@/components/screens/AuditLogPanel";
+import { BackButton } from "@/components/ui/BackButton";
 import { AppFooter } from "@/components/screens/AppFooter";
 import { UserMenu } from "@/components/screens/UserMenu";
 import { getDocument, getUserRole } from "@/lib/data";
@@ -31,12 +32,17 @@ export default async function DocumentDetailPage({
       <Topbar right={<UserMenu name={session?.user?.name} email={session?.user?.email} />} />
       <div className="grid flex-1 grid-cols-[1fr_376px] gap-6 p-7">
         <div>
-          <DocumentDetailHeader doc={doc} />
-          <div className="mb-5 flex gap-2.5">
-            <Link href={`/docs/${doc.id}/edit`}>
-              <Button variant="ghost">Edit</Button>
-            </Link>
-          </div>
+          <DocumentDetailHeader
+            doc={doc}
+            actions={
+              <>
+                <Link href={`/docs/${doc.id}/edit`}>
+                  <Button variant="ghost">Edit</Button>
+                </Link>
+                <BackButton />
+              </>
+            }
+          />
           <DocumentBody content={doc.content} attachments={doc.attachments} />
         </div>
         <div>

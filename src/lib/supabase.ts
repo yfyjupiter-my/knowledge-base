@@ -1,3 +1,4 @@
+import "server-only";
 import { createClient } from "@supabase/supabase-js";
 
 // Server-only client. SUPABASE_API_KEY must be the SECRET (service_role) key,
