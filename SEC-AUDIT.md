@@ -112,24 +112,60 @@ Notes:
 - [x] Verified: `[x](javascript:alert(1))` (and `data:`/`vbscript:`/`\tjavascript:`
       variants) produce no anchor; typecheck + eslint clean.
 
-### SEC-2 (HIGH) Close the anon-key / RLS gap before deploy
-- [ ] Replace the anon publishable key with a service/secret key held only in
-      server env; ensure it is never bundled to the client.
-- [ ] Write real RLS policies on all `kb_*` tables; remove blanket anon access.
-- [ ] Make the audit log append-only (no anon update/delete).
+### SEC-2 (HIGH) Close the anon-key / RLS gap before deploy — 🟡 IN PROGRESS (2026-07-09)
+Confirmed live state (project `knowledge-board` / `bawjdscthwgnwcnziawo`): all 5
+`kb_*` tables have RLS enabled but one policy `"server anon full access"` = ALL
+to `anon` with `USING (true)`/`CHECK (true)`. Security advisor flags all 5 as
+`rls_policy_always_true` (EXTERNAL). Architecture note: identity is NextAuth
+(Google), not Supabase Auth — the Supabase client is trusted server-to-server
+code, so the model is **secret (service_role) key + deny anon**, with authz
+enforced in the app layer (already the case).
 
-### SEC-3 (MEDIUM) Gate Compliance-doc edits
-- [ ] In `updateDocument`, if the target doc's `category === "Compliance"`,
-      require approver role — or set `status = 'draft'` on edit to force
-      re-approval. Record the choice in TASKS.md.
+- [x] Docs/code prepped (non-breaking): `.env.example` documents
+      `SUPABASE_URL`/`SUPABASE_API_KEY` (secret-key note); `supabase.ts` comment
+      now requires the secret key.
+- [x] **User action:** rotated `SUPABASE_API_KEY` to the secret key in
+      `.env.local` (2026-07-09). Runtime app-load re-verification pending.
+- [x] **Applied** migration `sec2_lock_down_kb_rls` — dropped all five
+      `"server anon full access"` policies. Confirmed: RLS enabled, 0 policies on
+      every `kb_*` table (anon/authenticated now denied; secret key bypasses RLS).
+- [x] Re-ran security advisor: the 5 `rls_policy_always_true` WARNs cleared,
+      replaced by `rls_enabled_no_policy` INFO — the expected secure state for a
+      service-role architecture (default deny + trusted server key).
+- [ ] (Follow-up, optional) Add granular per-command policies / append-only
+      audit-log constraint if you later want defense beyond the app layer.
 
-### SEC-4 (MEDIUM) Require verified Google email
-- [ ] In `auth.ts` `signIn`, return `/access-denied` unless
-      `profile?.email_verified` is `true`.
+Staged migration SQL:
+```sql
+drop policy if exists "server anon full access" on public.kb_documents;
+drop policy if exists "server anon full access" on public.kb_doc_versions;
+drop policy if exists "server anon full access" on public.kb_audit_log;
+drop policy if exists "server anon full access" on public.kb_favorites;
+drop policy if exists "server anon full access" on public.kb_user_roles;
+```
 
-### SEC-5 (MEDIUM) Stop leaking DB errors
-- [ ] Wrap Supabase calls: `console.error` the raw error server-side, return a
-      generic message to the client in every server action and data function.
+### SEC-3 (MEDIUM) Gate Compliance-doc edits — ✅ DONE (2026-07-09)
+- Decision: **revert-to-draft** (not approver-only). Editing stays open to all
+  authenticated users per Phase 5, but editing a *published* Compliance doc now
+  resets it to `draft`, re-showing `ApprovalPanel` so an approver must re-sign.
+- [x] `updateDocument` fetches `category`/`status`, sets `status: "draft"` in the
+      update payload when `category === "Compliance" && status === "published"`.
+- [x] Audit entry records the revert
+      (`edited by … — reverted to draft for re-approval`).
+- [x] Non-Compliance docs keep their status (unchanged behavior). Typecheck +
+      eslint clean.
+
+### SEC-4 (MEDIUM) Require verified Google email — ✅ DONE (2026-07-09)
+- [x] `auth.ts` `signIn` now returns `/access-denied` unless
+      `profile?.email_verified === true` (strict), checked before both the
+      allowlist and domain match. Typecheck + eslint clean.
+
+### SEC-5 (MEDIUM) Stop leaking DB errors — ✅ DONE (2026-07-09)
+- [x] Added `src/lib/errors.ts` `logDbError(context, error)` — logs raw detail
+      server-side only.
+- [x] Every Supabase error path in `actions.ts` and `data.ts` now logs the raw
+      error and returns/throws a generic message; no `${error.message}` reaches
+      the client (verified by grep). Typecheck + eslint clean.
 
 ### SEC-6 (LOW) Draft visibility & abuse hardening (defer to RBAC phase)
 - [ ] Restrict draft reads to owner/approver once RBAC lands (PRD v2.0).

@@ -23,6 +23,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       const email = profile?.email?.toLowerCase();
       if (!email) return "/access-denied";
 
+      // Only trust the email once Google asserts it is verified — an unverified
+      // address must never satisfy the allowlist or domain check.
+      if (profile?.email_verified !== true) return "/access-denied";
+
       if (allowedEmails.has(email)) return true;
 
       if (allowedDomain) {

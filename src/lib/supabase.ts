@@ -1,9 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
 
-// Server-only client. The API key is a publishable (anon-role) key kept in
-// server env — it is never bundled for the browser. RLS on the kb_* tables
-// grants the anon role access for this prototype; swap to a secret key and
-// tighten the policies before production.
+// Server-only client. SUPABASE_API_KEY must be the SECRET (service_role) key,
+// never the publishable/anon key, and is never bundled for the browser. The
+// kb_* tables have RLS enabled with no anon policies (see migration
+// sec2_lock_down_kb_rls); only the secret key — which bypasses RLS — can reach
+// them. Authorization is enforced in the app layer (auth.ts / actions.ts).
 const url = process.env.SUPABASE_URL;
 const key = process.env.SUPABASE_API_KEY;
 

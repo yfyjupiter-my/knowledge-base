@@ -4,9 +4,10 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { supabase } from "./supabase";
+import { logDbError } from "./errors";
 import { getUserRole } from "./data";
 import { categories } from "./categories";
-import type { DocCategoryLabel } from "./mock-data";
+import type { DocCategoryLabel, DocStatus } from "./mock-data";
 
 async function requireUser() {
   const session = await auth();
@@ -25,14 +26,20 @@ export async function setFavorite(docId: string, favorited: boolean): Promise<vo
     const { error } = await supabase
       .from("kb_favorites")
       .upsert({ user_email: email, doc_id: docId }, { onConflict: "user_email,doc_id" });
-    if (error) throw new Error(`Failed to add favorite: ${error.message}`);
+    if (error) {
+      logDbError("add favorite", error);
+      throw new Error("Failed to update favorite.");
+    }
   } else {
     const { error } = await supabase
       .from("kb_favorites")
       .delete()
       .eq("user_email", email)
       .eq("doc_id", docId);
-    if (error) throw new Error(`Failed to remove favorite: ${error.message}`);
+    if (error) {
+      logDbError("remove favorite", error);
+      throw new Error("Failed to update favorite.");
+    }
   }
   revalidatePath("/library");
   revalidatePath(`/docs/${docId}`);
@@ -51,7 +58,10 @@ export async function approveDocument(docId: string): Promise<void> {
     .eq("id", docId)
     .eq("status", "draft")
     .select("id");
-  if (error) throw new Error(`Failed to publish document: ${error.message}`);
+  if (error) {
+    logDbError("publish document", error);
+    throw new Error("Failed to publish document.");
+  }
   if (!data || data.length === 0) {
     // Already published (or missing) — nothing changed, so don't record a new approval.
     return;
@@ -60,7 +70,10 @@ export async function approveDocument(docId: string): Promise<void> {
   const { error: auditError } = await supabase
     .from("kb_audit_log")
     .insert({ doc_id: docId, date: today(), entry: `approved & published by ${name}` });
-  if (auditError) throw new Error(`Failed to write audit entry: ${auditError.message}`);
+  if (auditError) {
+    logDbError("write audit entry (approve)", auditError);
+    throw new Error("Failed to record the approval.");
+  }
 
   revalidatePath("/library");
   revalidatePath(`/docs/${docId}`);
@@ -121,7 +134,8 @@ export async function createDocument(
     if (error.code === "23505") {
       return { error: "A document with this title already exists." };
     }
-    return { error: `Failed to create document: ${error.message}` };
+    logDbError("create document", error);
+    return { error: "Failed to create document. Please try again." };
   }
 
   const { error: versionError } = await supabase.from("kb_doc_versions").insert({
@@ -132,14 +146,20 @@ export async function createDocument(
     note: "initial draft",
     current: true,
   });
-  if (versionError) throw new Error(`Failed to create initial version: ${versionError.message}`);
+  if (versionError) {
+    logDbError("create initial version", versionError);
+    throw new Error("Failed to create document.");
+  }
 
   const { error: auditError } = await supabase.from("kb_audit_log").insert({
     doc_id: id,
     date: today(),
     entry: `created by ${name}`,
   });
-  if (auditError) throw new Error(`Failed to write audit entry: ${auditError.message}`);
+  if (auditError) {
+    logDbError("write audit entry (create)", auditError);
+    throw new Error("Failed to create document.");
+  }
 
   revalidatePath("/library");
   redirect(`/docs/${id}`);
@@ -168,11 +188,39 @@ export async function updateDocument(
   if (!title) return { error: "Title is required." };
   if (!note) return { error: "A short note on what changed is required." };
 
+  // SEC-3: editing a published Compliance doc reverts it to draft so the
+  // change goes back through approver sign-off (PRD: compliance edits must not
+  // bypass the approval trail). Other categories keep their status.
+  const { data: existing, error: fetchError } = await supabase
+    .from("kb_documents")
+    .select("category, status")
+    .eq("id", docId)
+    .maybeSingle();
+  if (fetchError) {
+    logDbError("load document for edit", fetchError);
+    return { error: "Failed to save changes. Please try again." };
+  }
+  if (!existing) return { error: "Document not found." };
+
+  const revertToDraft =
+    existing.category === "Compliance" && existing.status === "published";
+  const updatePayload: {
+    title: string;
+    subtitle: string;
+    tags: string[];
+    content: string;
+    status?: DocStatus;
+  } = { title, subtitle, tags, content };
+  if (revertToDraft) updatePayload.status = "draft";
+
   const { error } = await supabase
     .from("kb_documents")
-    .update({ title, subtitle, tags, content })
+    .update(updatePayload)
     .eq("id", docId);
-  if (error) return { error: `Failed to save changes: ${error.message}` };
+  if (error) {
+    logDbError("update document", error);
+    return { error: "Failed to save changes. Please try again." };
+  }
 
   const { count } = await supabase
     .from("kb_doc_versions")
@@ -185,7 +233,10 @@ export async function updateDocument(
     .update({ current: false })
     .eq("doc_id", docId)
     .eq("current", true);
-  if (unsetError) throw new Error(`Failed to update version history: ${unsetError.message}`);
+  if (unsetError) {
+    logDbError("unset current version", unsetError);
+    throw new Error("Failed to save changes.");
+  }
 
   const { error: versionError } = await supabase.from("kb_doc_versions").insert({
     doc_id: docId,
@@ -195,12 +246,21 @@ export async function updateDocument(
     note,
     current: true,
   });
-  if (versionError) throw new Error(`Failed to record new version: ${versionError.message}`);
+  if (versionError) {
+    logDbError("record new version", versionError);
+    throw new Error("Failed to save changes.");
+  }
 
+  const auditEntry = revertToDraft
+    ? `edited by ${name} — reverted to draft for re-approval`
+    : `edited by ${name}`;
   const { error: auditError } = await supabase
     .from("kb_audit_log")
-    .insert({ doc_id: docId, date: today(), entry: `edited by ${name}` });
-  if (auditError) throw new Error(`Failed to write audit entry: ${auditError.message}`);
+    .insert({ doc_id: docId, date: today(), entry: auditEntry });
+  if (auditError) {
+    logDbError("write audit entry (edit)", auditError);
+    throw new Error("Failed to save changes.");
+  }
 
   revalidatePath("/library");
   revalidatePath(`/docs/${docId}`);

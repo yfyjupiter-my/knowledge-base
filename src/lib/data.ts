@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { logDbError } from "./errors";
 import { categories } from "./categories";
 import type { AuditEntry, DocCategoryLabel, DocStatus, Document, DocVersion } from "./mock-data";
 
@@ -49,7 +50,10 @@ async function getFavoritedIds(userEmail: string | undefined): Promise<Set<strin
     .from("kb_favorites")
     .select("doc_id")
     .eq("user_email", userEmail);
-  if (error) throw new Error(`Failed to load favorites: ${error.message}`);
+  if (error) {
+    logDbError("load favorites", error);
+    throw new Error("Failed to load favorites.");
+  }
   return new Set(data.map((row) => row.doc_id));
 }
 
@@ -58,7 +62,10 @@ export async function getDocuments(userEmail: string | undefined): Promise<Docum
     supabase.from("kb_documents").select("*").order("created_at").order("id"),
     getFavoritedIds(userEmail),
   ]);
-  if (error) throw new Error(`Failed to load documents: ${error.message}`);
+  if (error) {
+    logDbError("load documents", error);
+    throw new Error("Failed to load documents.");
+  }
   return (data as DocumentRow[]).map((row) => toDocument(row, favoritedIds));
 }
 
@@ -82,10 +89,19 @@ export async function getDocument(
     getFavoritedIds(userEmail),
   ]);
 
-  if (docResult.error) throw new Error(`Failed to load document: ${docResult.error.message}`);
+  if (docResult.error) {
+    logDbError("load document", docResult.error);
+    throw new Error("Failed to load document.");
+  }
   if (!docResult.data) return null;
-  if (versionsResult.error) throw new Error(`Failed to load versions: ${versionsResult.error.message}`);
-  if (auditResult.error) throw new Error(`Failed to load audit log: ${auditResult.error.message}`);
+  if (versionsResult.error) {
+    logDbError("load versions", versionsResult.error);
+    throw new Error("Failed to load document.");
+  }
+  if (auditResult.error) {
+    logDbError("load audit log", auditResult.error);
+    throw new Error("Failed to load document.");
+  }
 
   const doc = toDocument(docResult.data as DocumentRow, favoritedIds);
   const versions = versionsResult.data as DocVersion[];
@@ -104,6 +120,9 @@ export async function getUserRole(userEmail: string | undefined): Promise<UserRo
     .select("role")
     .eq("user_email", userEmail)
     .maybeSingle();
-  if (error) throw new Error(`Failed to load user role: ${error.message}`);
+  if (error) {
+    logDbError("load user role", error);
+    throw new Error("Failed to load user role.");
+  }
   return (data?.role as UserRole) ?? "viewer";
 }

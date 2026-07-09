@@ -119,6 +119,9 @@ content real and editable.
 >   HTML-injection surface.
 > - **Edit → status semantics: edit in place.** Editing a published Compliance
 >   doc does not revert its status to `draft`; no re-approval is triggered.
+>   **Superseded by SEC-3 (2026-07-09):** editing a *published Compliance* doc
+>   now reverts it to `draft` to force re-approval (see `SEC-AUDIT.md`). Other
+>   categories still edit in place.
 > - **Who can edit: everyone (authenticated).** Role gating was removed for
 >   editing — `updateDocument` only requires a signed-in user, not a specific
 >   `kb_user_roles` role. (The existing Approve/Publish gate in
