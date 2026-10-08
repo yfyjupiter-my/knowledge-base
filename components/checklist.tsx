@@ -150,7 +150,8 @@ function formatTime(ts: number, lang: Locale) {
   return d.toLocaleString(HTML_LANG[lang], sameDay ? { hour: "2-digit", minute: "2-digit" } : { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
-export function ChecklistProgress({ variant }: { variant: "card" | "bar" }) {
+/** 浮动在正文区右下角的进度条；全部完成后展开求助提示 */
+export function ChecklistProgress() {
   const { lang, checked, total, updatedAt, reset } = useChecklist();
   if (total === 0) return null;
   const site = getDictionary(lang).site;
@@ -159,55 +160,31 @@ export function ChecklistProgress({ variant }: { variant: "card" | "bar" }) {
   const percent = Math.round((done / total) * 100);
   const complete = done === total;
 
-  const bar = (
-    <div className="h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={done} aria-label={t.aria}>
-      <div className={`h-full rounded-full transition-[width] duration-500 ${complete ? "bg-emerald-500" : "bg-sky-500"}`} style={{ width: `${percent}%` }} />
-    </div>
-  );
-
-  const resetButton = done > 0 && (
-    <button type="button" onClick={reset} className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-white/10 dark:hover:text-slate-200">
-      <RotateCcw className="size-3" aria-hidden /> {t.reset}
-    </button>
-  );
-
-  if (variant === "bar") {
-    return (
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/90 px-4 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3 backdrop-blur lg:hidden dark:border-slate-800 dark:bg-slate-950/90">
-        <div className="mx-auto flex max-w-3xl items-center gap-3">
-          <span className="shrink-0 text-sm font-medium tabular-nums">
-            {complete ? <span className="text-emerald-600 dark:text-emerald-400">{t.done}</span> : `${done}/${total}`}
-          </span>
-          <div className="flex-1">{bar}</div>
-          {resetButton}
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-      <div className="mb-2 flex items-center justify-between">
-        <h2 className="text-sm font-semibold">{t.title}</h2>
-        {resetButton}
-      </div>
-      <p className="mb-3 text-2xl font-semibold tabular-nums">
-        {done}
-        <span className="text-base font-normal text-slate-400">
-          {" "}
-          / {total} {t.unit}
-        </span>
-      </p>
-      {bar}
-      <p className="mt-2 text-xs text-slate-500">
-        {updatedAt ? t.saved(formatTime(updatedAt, lang)) : t.hint}
-      </p>
+    <div
+      title={updatedAt ? t.saved(formatTime(updatedAt, lang)) : t.hint}
+      className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] z-30 rounded-xl border border-slate-200 bg-white/95 px-4 py-3 shadow-lg shadow-slate-900/10 backdrop-blur sm:inset-x-auto sm:right-6 sm:bottom-6 sm:w-80 dark:border-slate-800 dark:bg-slate-900/95 dark:shadow-black/40"
+    >
       {complete && (
-        <div className="mt-3 flex gap-2 rounded-lg bg-emerald-50 p-3 text-xs leading-relaxed text-emerald-800 dark:bg-emerald-400/10 dark:text-emerald-300">
+        <div className="mb-2.5 flex gap-2 text-xs leading-relaxed text-emerald-800 dark:text-emerald-300">
           <CircleCheckBig className="mt-0.5 size-4 shrink-0" aria-hidden />
           <span>{t.complete(site.support)}</span>
         </div>
       )}
+      <div className="flex items-center gap-3">
+        <span className="shrink-0 text-sm font-medium">{t.title}</span>
+        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={done} aria-label={t.aria}>
+          <div className={`h-full rounded-full transition-[width] duration-500 ${complete ? "bg-emerald-500" : "bg-sky-500"}`} style={{ width: `${percent}%` }} />
+        </div>
+        <span className="shrink-0 text-sm font-semibold tabular-nums">
+          {complete ? <span className="text-emerald-600 dark:text-emerald-400">{t.done}</span> : `${done} / ${total}`}
+        </span>
+        {done > 0 && (
+          <button type="button" onClick={reset} aria-label={t.reset} title={t.reset} className="-mr-1.5 grid size-7 shrink-0 place-items-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-white/10 dark:hover:text-slate-200">
+            <RotateCcw className="size-3.5" aria-hidden />
+          </button>
+        )}
+      </div>
     </div>
   );
 }

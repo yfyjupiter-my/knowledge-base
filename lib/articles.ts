@@ -3,7 +3,7 @@ import path from "node:path";
 import { cache } from "react";
 import matter from "gray-matter";
 import GithubSlugger from "github-slugger";
-import { resolveCategory, type CategoryId } from "./categories";
+import { CATEGORIES, resolveCategory, type CategoryId } from "./categories";
 import { DEFAULT_LOCALE, LOCALES, type Locale } from "./i18n";
 
 export const ARTICLES_DIR = path.join(process.cwd(), "content", "articles");
@@ -154,6 +154,31 @@ export const getArticle = cache((locale: Locale, slug: string): Article | null =
   const decoded = decodeURIComponent(slug);
   return getAllArticles(locale).find((a) => a.slug === decoded) ?? null;
 });
+
+/** 左侧目录树的节点：只带导航需要的字段，避免把正文传给客户端 */
+export interface TreeArticle extends Pick<ArticleMeta, "slug" | "title" | "tags" | "updated" | "contentLocale"> {
+  headings: Heading[];
+}
+
+export interface TreeCategory {
+  id: CategoryId;
+  articles: TreeArticle[];
+}
+
+/** 按 CATEGORIES 顺序分组（未归类的排在最后），组内按标题排序 */
+export function getArticleTree(locale: Locale): TreeCategory[] {
+  const all = getAllArticles(locale);
+  const order: CategoryId[] = [...CATEGORIES.map((c) => c.id), "other"];
+  return order
+    .map((id) => ({
+      id,
+      articles: all
+        .filter((a) => a.category === id)
+        .sort((a, b) => a.title.localeCompare(b.title, locale === "zh" ? "zh-CN" : "en"))
+        .map(({ slug, title, tags, updated, contentLocale, headings }) => ({ slug, title, tags, updated, contentLocale, headings })),
+    }))
+    .filter((c) => c.articles.length > 0);
+}
 
 export function getSearchDocs(locale: Locale): SearchDoc[] {
   return getAllArticles(locale).map(({ content, headings: _headings, ...meta }) => ({

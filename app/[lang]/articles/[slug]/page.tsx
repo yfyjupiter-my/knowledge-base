@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Languages } from "lucide-react";
+import { ChevronRight, Languages } from "lucide-react";
 import { getAllArticles, getArticle } from "@/lib/articles";
+import { getCategory } from "@/lib/categories";
 import { HTML_LANG, LOCALES, getDictionary, isLocale, localePath, type Locale } from "@/lib/i18n";
 import { ArticleMetaRow, CategoryBadge } from "@/components/article-card";
 import { ChecklistProgress, ChecklistProvider } from "@/components/checklist";
@@ -39,22 +40,41 @@ export default async function ArticlePage({ params }: Props) {
   const d = getDictionary(lang);
   const hasSteps = article.stepCount > 0;
   const contentLang: Locale = article.contentLocale;
+  const category = getCategory(article.category);
 
   return (
     <ChecklistProvider lang={lang} storageKey={`kb:checklist:${article.slug}:${contentLang}:${article.updated}`}>
-      <div className={`mx-auto max-w-6xl px-4 py-6 sm:py-10 ${hasSteps ? "pb-24 lg:pb-10" : ""}`}>
-        <Link href={localePath(lang, "/")} className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-900 dark:hover:text-white">
-          <ArrowLeft className="size-4" aria-hidden /> {d.article.back}
-        </Link>
+      <div className={`mx-auto max-w-3xl px-4 py-6 sm:px-8 sm:py-10 lg:mx-0 lg:px-10 ${hasSteps ? "pb-28" : ""}`}>
+        <nav aria-label={d.article.breadcrumb}>
+          <ol className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm text-slate-500">
+            <li>
+              <Link href={localePath(lang, "/")} className="hover:text-slate-900 dark:hover:text-white">
+                {d.search.allArticles}
+              </Link>
+            </li>
+            <li className="flex items-center gap-1.5">
+              <ChevronRight className="size-3.5 text-slate-400" aria-hidden />
+              <Link href={`${localePath(lang, "/")}?c=${article.category}`} className="hover:text-slate-900 dark:hover:text-white">
+                {category.label[lang]}
+              </Link>
+            </li>
+            <li className="flex min-w-0 items-center gap-1.5">
+              <ChevronRight className="size-3.5 shrink-0 text-slate-400" aria-hidden />
+              <span aria-current="page" lang={HTML_LANG[contentLang]} className="truncate text-slate-700 dark:text-slate-300">
+                {article.title}
+              </span>
+            </li>
+          </ol>
+        </nav>
 
         {article.fallback && d.article.fallbackNotice && (
-          <p className="mt-4 flex max-w-3xl items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-200">
+          <p className="mt-4 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-200">
             <Languages className="mt-0.5 size-4 shrink-0" aria-hidden />
             {d.article.fallbackNotice}
           </p>
         )}
 
-        <header className="mt-4 max-w-3xl" lang={HTML_LANG[contentLang]}>
+        <header className="mt-5 border-b border-slate-200 pb-6 dark:border-slate-800" lang={HTML_LANG[contentLang]}>
           <CategoryBadge id={article.category} lang={lang} />
           <h1 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">{article.title}</h1>
           {article.summary && <p className="mt-3 text-slate-600 dark:text-slate-400">{article.summary}</p>}
@@ -70,33 +90,11 @@ export default async function ArticlePage({ params }: Props) {
           )}
         </header>
 
-        <div className="mt-8 grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_260px]">
-          <article lang={HTML_LANG[contentLang]} className="prose prose-slate max-w-none dark:prose-invert prose-headings:scroll-mt-20 prose-h2:mt-10 prose-h2:border-b prose-h2:border-slate-200 prose-h2:pb-2 dark:prose-h2:border-slate-800 prose-a:text-sky-700 dark:prose-a:text-sky-400 prose-code:rounded prose-code:bg-slate-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:font-normal prose-code:before:content-none prose-code:after:content-none dark:prose-code:bg-slate-800 prose-table:text-sm">
-            <Markdown content={article.content} lang={lang} />
-          </article>
-
-          <aside className="hidden lg:block">
-            <div className="sticky top-20 space-y-6">
-              {hasSteps && <ChecklistProgress variant="card" />}
-              {article.headings.length > 0 && (
-                <nav aria-label={d.article.toc}>
-                  <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">{d.article.toc}</h2>
-                  <ul className="space-y-1 border-l border-slate-200 text-sm dark:border-slate-800">
-                    {article.headings.map((h) => (
-                      <li key={h.id}>
-                        <a href={`#${h.id}`} className="-ml-px block border-l border-transparent py-1 pl-3 text-slate-600 hover:border-slate-400 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white">
-                          {h.text}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                </nav>
-              )}
-            </div>
-          </aside>
-        </div>
+        <article lang={HTML_LANG[contentLang]} className="prose prose-slate mt-6 max-w-none dark:prose-invert prose-headings:scroll-mt-20 prose-h2:mt-10 prose-h2:border-b prose-h2:border-slate-200 prose-h2:pb-2 dark:prose-h2:border-slate-800 prose-a:text-sky-700 dark:prose-a:text-sky-400 prose-code:rounded prose-code:bg-slate-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:font-normal prose-code:before:content-none prose-code:after:content-none dark:prose-code:bg-slate-800 prose-table:text-sm">
+          <Markdown content={article.content} lang={lang} />
+        </article>
       </div>
-      {hasSteps && <ChecklistProgress variant="bar" />}
+      {hasSteps && <ChecklistProgress />}
     </ChecklistProvider>
   );
 }

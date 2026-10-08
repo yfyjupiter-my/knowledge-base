@@ -37,7 +37,7 @@ export function ArticleMetaRow({ article, lang, className = "" }: { article: Art
   );
 }
 
-interface ArticleCardProps {
+interface ArticleRowProps {
   article: ArticleMeta;
   lang: Locale;
   /** 可传入带高亮的标题/摘要 */
@@ -46,42 +46,40 @@ interface ArticleCardProps {
   snippet?: ReactNode;
 }
 
-export function ArticleCard({ article, lang, title, summary, snippet }: ArticleCardProps) {
+/** 首页列表中的一行：与左侧目录树同样紧凑的视觉密度 */
+export function ArticleRow({ article, lang, title, summary, snippet }: ArticleRowProps) {
+  const c = getCategory(article.category);
   return (
     <Link
       href={localePath(lang, `/articles/${encodeURIComponent(article.slug)}`)}
-      className="group flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-sky-300 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-sky-700"
+      className="group -mx-3 flex gap-3 rounded-lg px-3 py-3.5 transition-colors hover:bg-slate-100/70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500 dark:hover:bg-white/5"
     >
-      <div className="mb-3 flex items-center justify-between gap-2">
-        <CategoryBadge id={article.category} lang={lang} />
-        {article.fallback && (
-          <span className="inline-flex items-center gap-1 text-xs text-slate-400">
-            <Languages className="size-3.5" aria-hidden />
-            {getDictionary(lang).meta.untranslated}
-          </span>
+      <span className={`mt-[0.55rem] size-2 shrink-0 rounded-full ${c.dotClass}`} aria-hidden />
+      <div className="min-w-0 flex-1">
+        <div className="flex items-baseline gap-3">
+          <h3 lang={HTML_LANG[article.contentLocale]} className="min-w-0 flex-1 font-medium leading-snug text-slate-900 group-hover:text-sky-700 dark:text-slate-100 dark:group-hover:text-sky-300">
+            {title ?? article.title}
+          </h3>
+          {article.fallback && (
+            <span className="hidden shrink-0 items-center gap-1 text-xs text-slate-400 sm:inline-flex">
+              <Languages className="size-3.5" aria-hidden />
+              {getDictionary(lang).meta.untranslated}
+            </span>
+          )}
+          <span className="hidden shrink-0 text-xs text-slate-400 sm:inline">{c.label[lang]}</span>
+          <time dateTime={article.updated} className="shrink-0 text-xs tabular-nums text-slate-400">
+            {article.updated}
+          </time>
+        </div>
+        {(summary ?? article.summary) && (
+          <p className="mt-1 line-clamp-1 text-sm text-slate-500 dark:text-slate-400">{summary ?? article.summary}</p>
+        )}
+        {snippet && (
+          <p className="mt-1.5 rounded-md bg-slate-50 px-2.5 py-1.5 text-xs leading-relaxed text-slate-500 dark:bg-slate-800/60 dark:text-slate-400">
+            <span className="line-clamp-2">{snippet}</span>
+          </p>
         )}
       </div>
-      <h3 lang={HTML_LANG[article.contentLocale]} className="text-base font-semibold leading-snug text-slate-900 group-hover:text-sky-700 dark:text-slate-100 dark:group-hover:text-sky-300">
-        {title ?? article.title}
-      </h3>
-      {(summary ?? article.summary) && (
-        <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-slate-600 dark:text-slate-400">{summary ?? article.summary}</p>
-      )}
-      {snippet && (
-        <p className="mt-2 rounded-lg bg-slate-50 px-2.5 py-1.5 text-xs leading-relaxed text-slate-500 dark:bg-slate-800/60 dark:text-slate-400">
-          <span className="line-clamp-2">{snippet}</span>
-        </p>
-      )}
-      {article.tags.length > 0 && (
-        <div className="mt-3 flex flex-wrap gap-1.5">
-          {article.tags.slice(0, 4).map((tag) => (
-            <span key={tag} className="rounded-md bg-slate-100 px-1.5 py-0.5 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-400">
-              #{tag}
-            </span>
-          ))}
-        </div>
-      )}
-      <ArticleMetaRow article={article} lang={lang} className="mt-auto pt-4" />
     </Link>
   );
 }

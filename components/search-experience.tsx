@@ -3,10 +3,11 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Fuse, { type FuseResult, type FuseResultMatch, type IFuseOptions, type Expression } from "fuse.js";
 import { Search, SearchX, X } from "lucide-react";
-import { ArticleCard } from "./article-card";
+import { ArticleRow } from "./article-card";
 import { CATEGORIES, type CategoryId } from "@/lib/categories";
 import type { SearchDoc } from "@/lib/articles";
 import { getDictionary, type Locale } from "@/lib/i18n";
+import { announceCategory, onSearchRequest, type CategoryFilter } from "@/lib/search-events";
 
 const KEYS = [
   { name: "title", weight: 3 },
@@ -79,7 +80,7 @@ export function SearchExperience({ lang, docs }: { lang: Locale; docs: SearchDoc
   const d = getDictionary(lang);
   const t = d.search;
   const [query, setQuery] = useState("");
-  const [category, setCategory] = useState<CategoryId | "all">("all");
+  const [category, setCategory] = useState<CategoryFilter>("all");
   const inputRef = useRef<HTMLInputElement>(null);
   const deferredQuery = useDeferredValue(query.trim());
 
@@ -92,6 +93,19 @@ export function SearchExperience({ lang, docs }: { lang: Locale; docs: SearchDoc
     const c = params.get("c");
     if (c && CATEGORIES.some((x) => x.id === c)) setCategory(c as CategoryId);
   }, []);
+
+  // 已在首页时，侧栏通过事件切换分类或提交搜索
+  useEffect(
+    () =>
+      onSearchRequest(({ q, c }) => {
+        if (q !== undefined) setQuery(q);
+        if (c) setCategory(c);
+        if (q) inputRef.current?.focus();
+      }),
+    [],
+  );
+
+  useEffect(() => announceCategory(category), [category]);
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -134,71 +148,87 @@ export function SearchExperience({ lang, docs }: { lang: Locale; docs: SearchDoc
 
   const minLen = Math.min(2, deferredQuery.replace(/\s/g, "").length || 1);
 
+  const activeCategory = category === "all" ? null : CATEGORIES.find((c) => c.id === category);
+
   return (
-    <>
-      <section className="relative overflow-hidden border-b border-slate-200 bg-gradient-to-b from-sky-50 to-slate-50 dark:border-slate-800 dark:from-slate-900 dark:to-slate-950">
-        <div className="mx-auto max-w-3xl px-4 pb-10 pt-12 text-center sm:pt-16">
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-4xl dark:text-white">{t.heading}</h1>
-          <p className="mt-3 text-sm text-slate-600 sm:text-base dark:text-slate-400">
-            {t.subheading}
-          </p>
+    <div className="mx-auto max-w-3xl px-4 py-8 sm:px-8 sm:py-10 lg:mx-0 lg:px-10">
+      <section>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl dark:text-white">
+          {activeCategory ? activeCategory.label[lang] : t.heading}
+        </h1>
+        <p className="mt-2 text-sm text-slate-600 sm:text-base dark:text-slate-400">
+          {activeCategory ? activeCategory.description[lang] : t.subheading}
+        </p>
 
-          <div className="relative mx-auto mt-8 max-w-2xl">
-            <Search className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-slate-400" aria-hidden />
-            <input
-              ref={inputRef}
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => e.key === "Escape" && setQuery("")}
-              placeholder={t.placeholder}
-              aria-label={t.aria}
-              autoComplete="off"
-              autoFocus
-              className="h-14 w-full rounded-2xl border border-slate-300 bg-white pl-12 pr-20 text-base shadow-lg shadow-sky-900/5 outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/15 dark:border-slate-700 dark:bg-slate-900 dark:text-white [&::-webkit-search-cancel-button]:hidden"
+        <div className="relative mt-6">
+          <Search className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-slate-400" aria-hidden />
+          <input
+            ref={inputRef}
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => e.key === "Escape" && setQuery("")}
+            placeholder={t.placeholder}
+            aria-label={t.aria}
+            autoComplete="off"
+            autoFocus
+            className="h-12 w-full rounded-xl border border-slate-300 bg-white pl-12 pr-16 text-base outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/15 dark:border-slate-700 dark:bg-slate-900 dark:text-white [&::-webkit-search-cancel-button]:hidden"
+          />
+          <div className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center gap-2">
+            {query ? (
+              <button type="button" onClick={() => { setQuery(""); inputRef.current?.focus(); }} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800" aria-label={t.clear}>
+                <X className="size-4" />
+              </button>
+            ) : (
+              <kbd className="hidden rounded-md border border-slate-200 px-2 py-0.5 font-mono text-xs text-slate-400 sm:inline dark:border-slate-700">/</kbd>
+            )}
+          </div>
+        </div>
+
+        {/* 大屏由左侧目录树筛选分类；小屏目录收在抽屉里，因此保留分类按钮 */}
+        <div className="-mx-4 mt-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] lg:hidden" role="group" aria-label={t.filterAria}>
+          <FilterChip active={category === "all"} onClick={() => setCategory("all")} label={t.all} count={docs.length} />
+          {CATEGORIES.map((c) => (
+            <FilterChip
+              key={c.id}
+              active={category === c.id}
+              onClick={() => setCategory(category === c.id ? "all" : c.id)}
+              label={c.label[lang]}
+              count={counts.get(c.id) ?? 0}
+              dotClass={c.dotClass}
+              title={c.description[lang]}
             />
-            <div className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center gap-2">
-              {query ? (
-                <button type="button" onClick={() => { setQuery(""); inputRef.current?.focus(); }} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800" aria-label={t.clear}>
-                  <X className="size-4" />
-                </button>
-              ) : (
-                <kbd className="hidden rounded-md border border-slate-200 px-2 py-0.5 font-mono text-xs text-slate-400 sm:inline dark:border-slate-700">/</kbd>
-              )}
-            </div>
-          </div>
-
-          <div className="-mx-4 mt-5 flex gap-2 overflow-x-auto px-4 pb-1 sm:flex-wrap sm:justify-center" role="group" aria-label={t.filterAria}>
-            <FilterChip active={category === "all"} onClick={() => setCategory("all")} label={t.all} count={docs.length} />
-            {CATEGORIES.map((c) => (
-              <FilterChip
-                key={c.id}
-                active={category === c.id}
-                onClick={() => setCategory(category === c.id ? "all" : c.id)}
-                label={c.label[lang]}
-                count={counts.get(c.id) ?? 0}
-                dotClass={c.dotClass}
-                title={c.description[lang]}
-              />
-            ))}
-          </div>
+          ))}
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 py-8">
-        <div className="mb-4 flex items-baseline justify-between gap-4">
-          <h2 className="text-sm font-medium text-slate-700 dark:text-slate-300" aria-live="polite">
+      <section className="mt-8">
+        <div className="flex items-center justify-between gap-4 border-b border-slate-200 pb-2 dark:border-slate-800">
+          <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-300" aria-live="polite">
             {deferredQuery
               ? t.found(results.length)
-              : category === "all"
-                ? t.allArticles
-                : t.inCategory(CATEGORIES.find((c) => c.id === category)?.label[lang] ?? "", results.length)}
+              : activeCategory
+                ? t.inCategory(activeCategory.label[lang], results.length)
+                : t.recent}
           </h2>
-          {deferredQuery && <span className="font-mono text-xs text-slate-400">{elapsed.toFixed(2)} ms</span>}
+          <div className="flex items-center gap-3">
+            {deferredQuery && <span className="font-mono text-xs text-slate-400">{elapsed.toFixed(2)} ms</span>}
+            {activeCategory && (
+              <button
+                type="button"
+                onClick={() => setCategory("all")}
+                aria-label={t.clearCategory}
+                className="hidden items-center gap-1 rounded-md bg-sky-50 py-0.5 pl-2 pr-1 text-xs font-medium text-sky-700 hover:bg-sky-100 lg:inline-flex dark:bg-sky-400/10 dark:text-sky-300 dark:hover:bg-sky-400/20"
+              >
+                {activeCategory.label[lang]}
+                <X className="size-3.5" aria-hidden />
+              </button>
+            )}
+          </div>
         </div>
 
         {results.length > 0 ? (
-          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="divide-y divide-slate-100 dark:divide-slate-800/70">
             {results.map(({ item, matches }) => {
               const find = (key: string) => matches?.find((m) => m.key === key);
               const titleIdx = usefulIndices(find("title"), minLen);
@@ -206,7 +236,7 @@ export function SearchExperience({ lang, docs }: { lang: Locale; docs: SearchDoc
               const bodyIdx = usefulIndices(find("body"), minLen);
               return (
                 <li key={item.slug}>
-                  <ArticleCard
+                  <ArticleRow
                     article={item}
                     lang={lang}
                     title={highlight(item.title, titleIdx)}
@@ -218,14 +248,14 @@ export function SearchExperience({ lang, docs }: { lang: Locale; docs: SearchDoc
             })}
           </ul>
         ) : (
-          <div className="rounded-2xl border border-dashed border-slate-300 px-6 py-16 text-center dark:border-slate-700">
+          <div className="mt-6 rounded-2xl border border-dashed border-slate-300 px-6 py-16 text-center dark:border-slate-700">
             <SearchX className="mx-auto size-10 text-slate-300 dark:text-slate-600" aria-hidden />
             <p className="mt-4 font-medium text-slate-700 dark:text-slate-300">{t.emptyTitle}</p>
             <p className="mt-1 text-sm text-slate-500">{t.emptyHint(d.site.support)}</p>
           </div>
         )}
       </section>
-    </>
+    </div>
   );
 }
 
