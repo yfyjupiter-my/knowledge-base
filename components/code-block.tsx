@@ -3,8 +3,9 @@
 import { useRef, useState, type ReactNode } from "react";
 import { Check, Copy } from "lucide-react";
 import { copyText } from "@/lib/clipboard";
+import type { Dictionary } from "@/lib/i18n";
 
-export function CodeBlock({ language, children }: { language?: string; children: ReactNode }) {
+export function CodeBlock({ language, labels, children }: { language?: string; labels: Dictionary["code"]; children: ReactNode }) {
   const preRef = useRef<HTMLPreElement>(null);
   const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
 
@@ -23,17 +24,17 @@ export function CodeBlock({ language, children }: { language?: string; children:
           type="button"
           onClick={handleCopy}
           className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs text-slate-300 transition hover:bg-white/10 hover:text-white focus-visible:outline-2 focus-visible:outline-sky-400"
-          aria-label="复制代码"
+          aria-label={labels.aria}
         >
           {state === "copied" ? (
             <>
-              <Check className="size-3.5 text-emerald-400" aria-hidden /> 已复制
+              <Check className="size-3.5 text-emerald-400" aria-hidden /> {labels.copied}
             </>
           ) : state === "failed" ? (
-            <>复制失败，请手动选择</>
+            <>{labels.failed}</>
           ) : (
             <>
-              <Copy className="size-3.5" aria-hidden /> 复制
+              <Copy className="size-3.5" aria-hidden /> {labels.copy}
             </>
           )}
         </button>

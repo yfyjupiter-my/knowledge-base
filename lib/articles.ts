@@ -4,6 +4,7 @@ import { cache } from "react";
 import matter from "gray-matter";
 import GithubSlugger from "github-slugger";
 import { resolveCategory, type CategoryId } from "./categories";
+import { DEFAULT_LOCALE, LOCALES, type Locale } from "./i18n";
 
 export const ARTICLES_DIR = path.join(process.cwd(), "content", "articles");
 
@@ -18,6 +19,10 @@ export interface ArticleMeta {
   readingMinutes: number;
   /** 文中排查清单（- [ ]）的步骤数 */
   stepCount: number;
+  /** 正文实际使用的语言 */
+  contentLocale: Locale;
+  /** 请求的语言没有译文，回退显示了另一种语言 */
+  fallback: boolean;
 }
 
 export interface Heading {
@@ -89,13 +94,14 @@ function toPlainText(content: string): string {
     .trim();
 }
 
-function parseFile(file: string): Article {
+function parseFile(file: string, slug: string, contentLocale: Locale, requested: Locale): Article {
   const fullPath = path.join(ARTICLES_DIR, file);
   const raw = fs.readFileSync(fullPath, "utf8");
   const { data, content } = matter(raw);
-  const slug = file.replace(/\.md$/i, "");
   const { headings, stepCount } = analyse(content);
-  const plainLength = toPlainText(content).length;
+  const plain = toPlainText(content);
+  // 中文约 400 字/分钟，英文约 200 词/分钟
+  const minutes = contentLocale === "en" ? plain.split(/\s+/).length / 200 : plain.length / 400;
 
   return {
     slug,
@@ -104,33 +110,53 @@ function parseFile(file: string): Article {
     category: resolveCategory(data.category).id,
     tags: Array.isArray(data.tags) ? data.tags.map(String) : [],
     updated: formatDate(data.updated, fs.statSync(fullPath).mtime),
-    // 中文阅读速度约 400 字/分钟
-    readingMinutes: Math.max(1, Math.round(plainLength / 400)),
+    readingMinutes: Math.max(1, Math.round(minutes)),
     stepCount,
+    contentLocale,
+    fallback: contentLocale !== requested,
     content,
     headings,
   };
 }
 
-function listFiles(): string[] {
-  if (!fs.existsSync(ARTICLES_DIR)) return [];
-  return fs.readdirSync(ARTICLES_DIR).filter((f) => f.toLowerCase().endsWith(".md") && !f.startsWith("_"));
+const TRANSLATED = LOCALES.filter((l) => l !== DEFAULT_LOCALE);
+// vpn.md → 默认语言（中文）；vpn.en.md → 英文
+const FILE_RE = new RegExp(`^(.+?)(?:\\.(${TRANSLATED.join("|")}))?\\.md$`, "i");
+
+/** 按 slug 分组：{ slug → { zh: "vpn.md", en: "vpn.en.md" } } */
+function listFiles(): Map<string, Partial<Record<Locale, string>>> {
+  const groups = new Map<string, Partial<Record<Locale, string>>>();
+  if (!fs.existsSync(ARTICLES_DIR)) return groups;
+  for (const file of fs.readdirSync(ARTICLES_DIR)) {
+    if (file.startsWith("_")) continue;
+    const m = FILE_RE.exec(file);
+    if (!m) continue;
+    const locale = (m[2]?.toLowerCase() as Locale | undefined) ?? DEFAULT_LOCALE;
+    const group = groups.get(m[1]) ?? {};
+    group[locale] = file;
+    groups.set(m[1], group);
+  }
+  return groups;
 }
 
-export const getAllArticles = cache((): Article[] =>
-  listFiles()
-    .map(parseFile)
-    .sort((a, b) => b.updated.localeCompare(a.updated) || a.title.localeCompare(b.title, "zh-CN")),
+/** 优先使用请求语言的版本，没有译文时回退到另一种语言 */
+export const getAllArticles = cache((locale: Locale): Article[] =>
+  [...listFiles()]
+    .map(([slug, files]) => {
+      const contentLocale = files[locale] ? locale : files[DEFAULT_LOCALE] ? DEFAULT_LOCALE : (Object.keys(files)[0] as Locale);
+      return parseFile(files[contentLocale]!, slug, contentLocale, locale);
+    })
+    .sort((a, b) => b.updated.localeCompare(a.updated) || a.title.localeCompare(b.title, locale === "zh" ? "zh-CN" : "en")),
 );
 
 /** slug 只与目录中真实存在的文件匹配，不会拼接任意路径 */
-export const getArticle = cache((slug: string): Article | null => {
+export const getArticle = cache((locale: Locale, slug: string): Article | null => {
   const decoded = decodeURIComponent(slug);
-  return getAllArticles().find((a) => a.slug === decoded) ?? null;
+  return getAllArticles(locale).find((a) => a.slug === decoded) ?? null;
 });
 
-export function getSearchDocs(): SearchDoc[] {
-  return getAllArticles().map(({ content, headings: _headings, ...meta }) => ({
+export function getSearchDocs(locale: Locale): SearchDoc[] {
+  return getAllArticles(locale).map(({ content, headings: _headings, ...meta }) => ({
     ...meta,
     body: toPlainText(content),
   }));

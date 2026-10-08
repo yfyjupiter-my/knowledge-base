@@ -6,7 +6,7 @@ import { Search, SearchX, X } from "lucide-react";
 import { ArticleCard } from "./article-card";
 import { CATEGORIES, type CategoryId } from "@/lib/categories";
 import type { SearchDoc } from "@/lib/articles";
-import { SITE } from "@/lib/site";
+import { getDictionary, type Locale } from "@/lib/i18n";
 
 const KEYS = [
   { name: "title", weight: 3 },
@@ -75,7 +75,9 @@ function buildQuery(query: string): string | Expression {
   return { $and: tokens.map((t) => ({ $or: KEYS.map((k) => ({ [k.name]: t })) })) };
 }
 
-export function SearchExperience({ docs }: { docs: SearchDoc[] }) {
+export function SearchExperience({ lang, docs }: { lang: Locale; docs: SearchDoc[] }) {
+  const d = getDictionary(lang);
+  const t = d.search;
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<CategoryId | "all">("all");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -136,9 +138,9 @@ export function SearchExperience({ docs }: { docs: SearchDoc[] }) {
     <>
       <section className="relative overflow-hidden border-b border-slate-200 bg-gradient-to-b from-sky-50 to-slate-50 dark:border-slate-800 dark:from-slate-900 dark:to-slate-950">
         <div className="mx-auto max-w-3xl px-4 pb-10 pt-12 text-center sm:pt-16">
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-4xl dark:text-white">遇到问题？先搜一搜</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-4xl dark:text-white">{t.heading}</h1>
           <p className="mt-3 text-sm text-slate-600 sm:text-base dark:text-slate-400">
-            输入现象、错误码或关键词，按步骤自助排查常见 IT 问题
+            {t.subheading}
           </p>
 
           <div className="relative mx-auto mt-8 max-w-2xl">
@@ -149,15 +151,15 @@ export function SearchExperience({ docs }: { docs: SearchDoc[] }) {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => e.key === "Escape" && setQuery("")}
-              placeholder="例如：VPN 连不上、809、打印机脱机…"
-              aria-label="搜索知识库"
+              placeholder={t.placeholder}
+              aria-label={t.aria}
               autoComplete="off"
               autoFocus
               className="h-14 w-full rounded-2xl border border-slate-300 bg-white pl-12 pr-20 text-base shadow-lg shadow-sky-900/5 outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/15 dark:border-slate-700 dark:bg-slate-900 dark:text-white [&::-webkit-search-cancel-button]:hidden"
             />
             <div className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center gap-2">
               {query ? (
-                <button type="button" onClick={() => { setQuery(""); inputRef.current?.focus(); }} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800" aria-label="清空搜索">
+                <button type="button" onClick={() => { setQuery(""); inputRef.current?.focus(); }} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800" aria-label={t.clear}>
                   <X className="size-4" />
                 </button>
               ) : (
@@ -166,17 +168,17 @@ export function SearchExperience({ docs }: { docs: SearchDoc[] }) {
             </div>
           </div>
 
-          <div className="-mx-4 mt-5 flex gap-2 overflow-x-auto px-4 pb-1 sm:flex-wrap sm:justify-center" role="group" aria-label="按分类筛选">
-            <FilterChip active={category === "all"} onClick={() => setCategory("all")} label="全部" count={docs.length} />
+          <div className="-mx-4 mt-5 flex gap-2 overflow-x-auto px-4 pb-1 sm:flex-wrap sm:justify-center" role="group" aria-label={t.filterAria}>
+            <FilterChip active={category === "all"} onClick={() => setCategory("all")} label={t.all} count={docs.length} />
             {CATEGORIES.map((c) => (
               <FilterChip
                 key={c.id}
                 active={category === c.id}
                 onClick={() => setCategory(category === c.id ? "all" : c.id)}
-                label={c.label}
+                label={c.label[lang]}
                 count={counts.get(c.id) ?? 0}
                 dotClass={c.dotClass}
-                title={c.description}
+                title={c.description[lang]}
               />
             ))}
           </div>
@@ -186,7 +188,11 @@ export function SearchExperience({ docs }: { docs: SearchDoc[] }) {
       <section className="mx-auto max-w-6xl px-4 py-8">
         <div className="mb-4 flex items-baseline justify-between gap-4">
           <h2 className="text-sm font-medium text-slate-700 dark:text-slate-300" aria-live="polite">
-            {deferredQuery ? <>找到 <span className="font-semibold text-slate-900 dark:text-white">{results.length}</span> 篇相关文章</> : category === "all" ? "全部文章" : `${CATEGORIES.find((c) => c.id === category)?.label} · ${results.length} 篇`}
+            {deferredQuery
+              ? t.found(results.length)
+              : category === "all"
+                ? t.allArticles
+                : t.inCategory(CATEGORIES.find((c) => c.id === category)?.label[lang] ?? "", results.length)}
           </h2>
           {deferredQuery && <span className="font-mono text-xs text-slate-400">{elapsed.toFixed(2)} ms</span>}
         </div>
@@ -202,6 +208,7 @@ export function SearchExperience({ docs }: { docs: SearchDoc[] }) {
                 <li key={item.slug}>
                   <ArticleCard
                     article={item}
+                    lang={lang}
                     title={highlight(item.title, titleIdx)}
                     summary={item.summary ? highlight(item.summary, summaryIdx) : undefined}
                     snippet={!titleIdx.length && !summaryIdx.length ? bodySnippet(item.body, bodyIdx) : undefined}
@@ -213,10 +220,8 @@ export function SearchExperience({ docs }: { docs: SearchDoc[] }) {
         ) : (
           <div className="rounded-2xl border border-dashed border-slate-300 px-6 py-16 text-center dark:border-slate-700">
             <SearchX className="mx-auto size-10 text-slate-300 dark:text-slate-600" aria-hidden />
-            <p className="mt-4 font-medium text-slate-700 dark:text-slate-300">没有找到相关文章</p>
-            <p className="mt-1 text-sm text-slate-500">
-              试试更换关键词或清除分类筛选；仍无法解决请联系{SITE.support.label}（{SITE.support.contact}）
-            </p>
+            <p className="mt-4 font-medium text-slate-700 dark:text-slate-300">{t.emptyTitle}</p>
+            <p className="mt-1 text-sm text-slate-500">{t.emptyHint(d.site.support)}</p>
           </div>
         )}
       </section>

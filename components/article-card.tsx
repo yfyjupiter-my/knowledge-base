@@ -1,30 +1,33 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { CalendarDays, Clock, ListChecks } from "lucide-react";
+import { CalendarDays, Clock, Languages, ListChecks } from "lucide-react";
 import { getCategory } from "@/lib/categories";
 import type { ArticleMeta } from "@/lib/articles";
+import { HTML_LANG, getDictionary, localePath, type Locale } from "@/lib/i18n";
 
-export function CategoryBadge({ id }: { id: ArticleMeta["category"] }) {
+export function CategoryBadge({ id, lang }: { id: ArticleMeta["category"]; lang: Locale }) {
   const c = getCategory(id);
   return (
     <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset ${c.badgeClass}`}>
       <span className={`size-1.5 rounded-full ${c.dotClass}`} aria-hidden />
-      {c.label}
+      {c.label[lang]}
     </span>
   );
 }
 
-export function ArticleMetaRow({ article, className = "" }: { article: ArticleMeta; className?: string }) {
+export function ArticleMetaRow({ article, lang, className = "" }: { article: ArticleMeta; lang: Locale; className?: string }) {
+  const d = getDictionary(lang).meta;
   return (
     <div className={`flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 dark:text-slate-400 ${className}`}>
       {article.stepCount > 0 && (
         <span className="inline-flex items-center gap-1">
           <ListChecks className="size-3.5" aria-hidden />
-          {article.stepCount} 个排查步骤
+          {d.steps(article.stepCount)}
         </span>
       )}
       <span className="inline-flex items-center gap-1">
-        <Clock className="size-3.5" aria-hidden />约 {article.readingMinutes} 分钟
+        <Clock className="size-3.5" aria-hidden />
+        {d.minutes(article.readingMinutes)}
       </span>
       <span className="inline-flex items-center gap-1">
         <CalendarDays className="size-3.5" aria-hidden />
@@ -36,22 +39,29 @@ export function ArticleMetaRow({ article, className = "" }: { article: ArticleMe
 
 interface ArticleCardProps {
   article: ArticleMeta;
+  lang: Locale;
   /** 可传入带高亮的标题/摘要 */
   title?: ReactNode;
   summary?: ReactNode;
   snippet?: ReactNode;
 }
 
-export function ArticleCard({ article, title, summary, snippet }: ArticleCardProps) {
+export function ArticleCard({ article, lang, title, summary, snippet }: ArticleCardProps) {
   return (
     <Link
-      href={`/articles/${encodeURIComponent(article.slug)}`}
+      href={localePath(lang, `/articles/${encodeURIComponent(article.slug)}`)}
       className="group flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-sky-300 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-sky-700"
     >
       <div className="mb-3 flex items-center justify-between gap-2">
-        <CategoryBadge id={article.category} />
+        <CategoryBadge id={article.category} lang={lang} />
+        {article.fallback && (
+          <span className="inline-flex items-center gap-1 text-xs text-slate-400">
+            <Languages className="size-3.5" aria-hidden />
+            {getDictionary(lang).meta.untranslated}
+          </span>
+        )}
       </div>
-      <h3 className="text-base font-semibold leading-snug text-slate-900 group-hover:text-sky-700 dark:text-slate-100 dark:group-hover:text-sky-300">
+      <h3 lang={HTML_LANG[article.contentLocale]} className="text-base font-semibold leading-snug text-slate-900 group-hover:text-sky-700 dark:text-slate-100 dark:group-hover:text-sky-300">
         {title ?? article.title}
       </h3>
       {(summary ?? article.summary) && (
@@ -71,7 +81,7 @@ export function ArticleCard({ article, title, summary, snippet }: ArticleCardPro
           ))}
         </div>
       )}
-      <ArticleMetaRow article={article} className="mt-auto pt-4" />
+      <ArticleMetaRow article={article} lang={lang} className="mt-auto pt-4" />
     </Link>
   );
 }
