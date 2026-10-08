@@ -1,0 +1,32 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@theme {
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+    "Noto Sans CJK SC", sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", "Cascadia Code", Consolas, "Liberation Mono", monospace;
+}
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+    scroll-padding-top: 5rem;
+  }
+  body {
+    @apply bg-slate-50 text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100;
+  }
+}
+
+/* 排查清单：去掉列表符号，由复选框代替 */
+.prose ul.contains-task-list {
+  list-style: none;
+  padding-left: 0;
+}
+.prose ul.contains-task-list > li.checklist-item {
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+  padding-left: 0.75rem;
+}
+.prose ul.contains-task-list > li.checklist-item::marker {
+  content: none;
+}

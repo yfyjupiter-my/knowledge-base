@@ -1,0 +1,15 @@
+services:
+  knowledge-base:
+    build: .
+    image: knowledge-base:latest
+    container_name: knowledge-base
+    ports:
+      # 宿主机端口默认 3000，可通过环境变量覆盖：KB_PORT=8080 docker compose up -d
+      - "${KB_PORT:-3200}:3000"
+    restart: unless-stopped
+    volumes:
+      # 挂载本地文章目录：修改 Markdown 后约 60 秒内生效，无需重新构建镜像
+      # 如需使用镜像内置的文章，删除下面这一行即可
+      - ./content/articles:/app/content/articles:ro
+    environment:
+      - NODE_ENV=production

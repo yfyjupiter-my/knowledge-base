@@ -1,0 +1,23 @@
+# 依赖与构建缓存：在镜像内重新安装/构建
+node_modules
+.next
+out
+*.tsbuildinfo
+next-env.d.ts
+
+# 版本控制与编辑器
+.git
+.gitignore
+.vscode
+.idea
+.DS_Store
+
+# 本地环境变量与日志
+.env*
+npm-debug.log*
+
+# Docker 自身与文档
+Dockerfile
+docker-compose.yml
+.dockerignore
+README.md
