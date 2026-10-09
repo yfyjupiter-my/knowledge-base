@@ -17,16 +17,11 @@
   }
 }
 
-/* 排查清单：去掉列表符号，由复选框代替 */
+/* 任务列表（- [ ]）：去掉列表符号，只显示静态复选框 */
 .prose ul.contains-task-list {
   list-style: none;
   padding-left: 0;
 }
-.prose ul.contains-task-list > li.checklist-item {
-  margin-top: 0.25rem;
-  margin-bottom: 0.25rem;
-  padding-left: 0.75rem;
-}
-.prose ul.contains-task-list > li.checklist-item::marker {
+.prose ul.contains-task-list > li.task-list-item::marker {
   content: none;
 }

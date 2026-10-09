@@ -5,10 +5,9 @@ import rehypeHighlight from "rehype-highlight";
 import { common } from "lowlight";
 import powershell from "highlight.js/lib/languages/powershell";
 import dos from "highlight.js/lib/languages/dos";
-import { remarkCallout, rehypeChecklist } from "@/lib/markdown-plugins";
+import { remarkCallout } from "@/lib/markdown-plugins";
 import { CodeBlock } from "./code-block";
 import { Callout } from "./callout";
-import { ChecklistItem } from "./checklist";
 import { getDictionary, type Locale } from "@/lib/i18n";
 
 type DataProps = Record<string, unknown>;
@@ -39,11 +38,6 @@ function buildComponents(lang: Locale): Components {
       }
       return <blockquote {...props}>{children}</blockquote>;
     },
-    li({ node: _node, children, ...props }) {
-      const index = (props as DataProps)["data-task-index"];
-      if (index !== undefined) return <ChecklistItem index={Number(index)}>{children}</ChecklistItem>;
-      return <li {...props}>{children}</li>;
-    },
     a({ node: _node, href, children, ...props }) {
       const external = href ? /^https?:\/\//.test(href) : false;
       return (
@@ -62,12 +56,12 @@ function buildComponents(lang: Locale): Components {
   };
 }
 
-/** 服务端渲染 Markdown；代码复制与排查清单为客户端交互组件 */
+/** 服务端渲染 Markdown；代码复制为客户端交互组件 */
 export function Markdown({ content, lang }: { content: string; lang: Locale }) {
   return (
     <ReactMarkdown
       remarkPlugins={[remarkGfm, remarkCallout]}
-      rehypePlugins={[rehypeSlug, [rehypeHighlight, { languages: { ...common, powershell, dos } }], rehypeChecklist]}
+      rehypePlugins={[rehypeSlug, [rehypeHighlight, { languages: { ...common, powershell, dos } }]]}
       components={buildComponents(lang)}
     >
       {content}

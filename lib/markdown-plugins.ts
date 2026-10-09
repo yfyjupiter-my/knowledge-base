@@ -1,6 +1,5 @@
 import { visit } from "unist-util-visit";
 import type { Root as MdastRoot, Blockquote } from "mdast";
-import type { Root as HastRoot, Element, ElementContent } from "hast";
 
 export const CALLOUT_TYPES = ["note", "tip", "important", "warning", "caution"] as const;
 export type CalloutType = (typeof CALLOUT_TYPES)[number];
@@ -38,41 +37,6 @@ export function remarkCallout() {
           ...(m[2].trim() ? { dataCalloutTitle: m[2].trim() } : {}),
         },
       };
-    });
-  };
-}
-
-function removeFirstCheckbox(parent: Element): boolean | null {
-  for (let i = 0; i < parent.children.length; i++) {
-    const child = parent.children[i] as ElementContent;
-    if (child.type !== "element") continue;
-    if (child.tagName === "input" && child.properties?.type === "checkbox") {
-      parent.children.splice(i, 1);
-      return Boolean(child.properties.checked);
-    }
-    // 松散列表中复选框位于 <p> 内
-    if (child.tagName === "p") {
-      const found = removeFirstCheckbox(child);
-      if (found !== null) return found;
-    }
-  }
-  return null;
-}
-
-/**
- * 为 GFM 任务列表项（- [ ] 步骤）编号并移除静态复选框，
- * 由客户端 <ChecklistItem> 渲染为可交互、可持久化的排查步骤。
- */
-export function rehypeChecklist() {
-  return (tree: HastRoot) => {
-    let index = 0;
-    visit(tree, "element", (node: Element) => {
-      if (node.tagName !== "li") return;
-      const cls = node.properties?.className;
-      if (!Array.isArray(cls) || !cls.includes("task-list-item")) return;
-      if (removeFirstCheckbox(node) === null) return;
-      // 进度只记录在用户本地，Markdown 中写的 [x] 不作为初始勾选状态
-      node.properties = { ...node.properties, dataTaskIndex: index++ };
     });
   };
 }
