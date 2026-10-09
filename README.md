@@ -7,7 +7,7 @@
 - **目录树导航**：左侧按分类展示全部文章，可折叠、可即时筛选（`Ctrl K`）；当前文章自动展开章节，并随滚动高亮
 - **分类可自定义**：在 `content/categories.yml` 中增删分类，无需改代码或重建镜像
 - **Markdown 增强**：代码高亮与一键复制（HTTP 内网环境也能复制）、GitHub 风格警告框、表格、自动目录
-- **中英双语**：界面与文章均支持中文 / English 一键切换，记住用户的语言偏好；未翻译的文章自动回退显示中文
+- **中英双语**：英文为默认语言，界面与文章均支持 English / 中文一键切换，记住用户的语言偏好；未翻译的文章自动回退显示英文原文
 - **响应式布局**：PC 端为左侧目录树 + 右侧正文，移动端目录收进顶栏 ☰ 抽屉
 - **Docker 部署**：`standalone` 模式 + 多阶段构建，以非 root 用户运行
 
@@ -42,16 +42,16 @@ content/articles/vpn-connection.md  →  /articles/vpn-connection
 
 ### 新建文章
 
-1. 复制 `content/articles/_template.md`，重命名为英文短横线格式，例如 `monitor-no-signal.md`
+1. 复制 `content/articles/_template.md`（英文模板），重命名为英文短横线格式，例如 `monitor-no-signal.md`
    （以 `_` 开头的文件不会出现在知识库中，可用作模板或草稿）
 2. 填写文件头部的 frontmatter：
 
 ```yaml
 ---
-title: 显示器无信号排查          # 标题（必填）
-summary: 一句话说明适用场景        # 显示在首页列表和文章标题下，并参与搜索
-category: 硬件故障               # categories.yml 中分类的 id、中文名或英文名，找不到时归入"其他"
-tags: [显示器, 扩展坞, HDMI]      # 关键词，搜索权重较高
+title: Monitor Shows No Signal   # 标题（必填）
+summary: One-line scenario        # 显示在首页列表和文章标题下，并参与搜索
+category: hardware               # categories.yml 中分类的 id、中文名或英文名，找不到时归入"其他"
+tags: [monitor, dock, HDMI]      # 关键词，搜索权重较高
 updated: 2026-10-08              # 更新日期，用于排序
 ---
 ```
@@ -84,17 +84,17 @@ ipconfig /flushdns
 
 另外还支持表格、链接、图片等标准 GFM 语法。二级标题（`##`）会自动出现在左侧目录树中（打开该文章时展开）。
 
-### 英文版本（双语）
+### 中文版本（双语）
 
-在同一目录下新建同名、带 `.en` 后缀的文件即为英文版：
+英文是默认语言。在同一目录下新建同名、带 `.zh` 后缀的文件即为中文版（中文模板见 `_template.zh.md`）：
 
 ```
-content/articles/vpn-connection.md      →  /articles/vpn-connection      （中文）
-content/articles/vpn-connection.en.md   →  /en/articles/vpn-connection   （英文）
+content/articles/vpn-connection.md      →  /articles/vpn-connection      （英文，默认）
+content/articles/vpn-connection.zh.md   →  /zh/articles/vpn-connection   （中文）
 ```
 
-- 英文版的 frontmatter 格式相同，`category` 可写分类的英文 id（如 `network`）
-- 没有英文版的文章，在英文站点中会显示中文内容，并带有"尚未翻译"提示和列表标记
+- 中文版的 frontmatter 格式相同，`category` 可写分类的 id 或中文名
+- 没有中文版的文章，在中文站点中会显示英文内容，并带有"暂无中文版"提示和"仅英文"列表标记
 - 建议中英文版本保持相同的排查步骤结构
 
 ### 修改何时生效
@@ -130,10 +130,10 @@ content/articles/vpn-connection.en.md   →  /en/articles/vpn-connection   （�
 
 | 地址 | 说明 |
 | --- | --- |
-| `/`、`/articles/...` | 中文（默认，无前缀） |
-| `/en`、`/en/articles/...` | 英文 |
+| `/`、`/articles/...` | 英文（默认，无前缀） |
+| `/zh`、`/zh/articles/...` | 中文 |
 
-点击右上角的语言按钮会切换到另一种语言的同一页面（保留搜索词），并通过 cookie 记住选择：之后访问无前缀的中文地址会自动跳转到英文版，直到再次切换回中文。
+点击右上角的语言按钮会切换到另一种语言的同一页面（保留搜索词），并通过 cookie 记住选择：之后访问无前缀的英文地址会自动跳转到中文版，直到再次切换回英文。旧的 `/en/...` 链接会重定向到无前缀地址。
 
 ## 3. Docker 部署
 
@@ -186,7 +186,7 @@ docker run -d --name knowledge-base -p 3000:3000 \
 │   │   ├── page.tsx                  # 首页：搜索与最近更新列表
 │   │   └── articles/[slug]/page.tsx  # 文章详情页
 │   └── globals.css
-├── middleware.ts                 # 语言路由：无前缀 → 中文，/en → 英文
+├── middleware.ts                 # 语言路由：无前缀 → 英文，/zh → 中文
 ├── components/
 │   ├── search-experience.tsx     # Fuse.js 实时搜索（客户端）
 │   ├── sidebar-tree.tsx          # 左侧目录树：分类折叠、筛选、章节滚动高亮（客户端）
@@ -205,7 +205,7 @@ docker run -d --name knowledge-base -p 3000:3000 \
 │   └── i18n.ts                   # 语言配置与中英文界面文案
 ├── content/
 │   ├── categories.yml            # 🗂️ 分类配置（增删分类改这里）
-│   └── articles/                 # 📝 文章目录（xxx.md 中文 / xxx.en.md 英文）
+│   └── articles/                 # 📝 文章目录（xxx.md 英文 / xxx.zh.md 中文）
 ├── Dockerfile
 ├── docker-compose.yml
 └── .dockerignore

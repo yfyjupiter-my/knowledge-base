@@ -1,22 +1,22 @@
 ---
-title: 文章标题（会显示在搜索结果中）
-summary: 一句话描述适用场景，会显示在卡片上并参与搜索。
-category: 网络连接   # 网络连接 / 账号权限 / 软件报错 / 硬件故障
-tags: [关键词1, 关键词2, 错误码]
+title: Article title (shown in search results)
+summary: One sentence describing when this applies. Shown on cards and included in search.
+category: network   # network / account / software / hardware (ids from content/categories.yml)
+tags: [keyword1, keyword2, error code]
 updated: 2026-01-01
 ---
 
-<!-- 以下划线开头的文件（如本模板）不会出现在知识库中。复制本文件并重命名为 英文-短横线.md 即可新建文章；英文版另存为 同名.en.md。 -->
+<!-- Files starting with an underscore (like this template) are hidden from the knowledge base. Copy this file and rename it to kebab-case.md to create an article; save the Chinese version as same-name.zh.md. -->
 
-## 一、第一组排查步骤
+## 1. First group of troubleshooting steps
 
-- [ ] 每个 "- [ ]" 都会成为一个可勾选的排查步骤
-- [ ] 步骤中可以使用 `行内代码` 和 [链接](https://example.com)
+- [ ] Each "- [ ]" becomes a troubleshooting step
+- [ ] Steps can use `inline code` and [links](https://example.com)
 
 > [!TIP]
-> 可用的提示框类型：NOTE、TIP、IMPORTANT、WARNING、CAUTION。在类型后可写自定义标题，例如 `> [!WARNING] 注意数据安全`。
+> Available callout types: NOTE, TIP, IMPORTANT, WARNING, CAUTION. Add a custom title after the type, e.g. `> [!WARNING] Protect your data`.
 
 ```powershell
-# 代码块会自动高亮并提供一键复制按钮
+# Code blocks get syntax highlighting and a copy button
 ipconfig /all
 ```

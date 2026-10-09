@@ -3,10 +3,10 @@ import { DEFAULT_LOCALE, LOCALE_COOKIE, isLocale, localePath, stripLocale } from
 
 /**
  * 路由约定：
- *   /articles/vpn      → 中文（内部重写到 /zh/articles/vpn）
- *   /en/articles/vpn   → 英文
- *   /zh/...            → 重定向到无前缀的规范地址
- * 用户通过切换按钮选择英文后（cookie），访问无前缀地址会自动跳转到英文版。
+ *   /articles/vpn      → 英文（内部重写到 /en/articles/vpn）
+ *   /zh/articles/vpn   → 中文
+ *   /en/...            → 重定向到无前缀的规范地址
+ * 用户通过切换按钮选择中文后（cookie），访问无前缀地址会自动跳转到中文版。
  */
 export function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl;

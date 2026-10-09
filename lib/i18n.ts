@@ -1,6 +1,6 @@
 export const LOCALES = ["zh", "en"] as const;
 export type Locale = (typeof LOCALES)[number];
-export const DEFAULT_LOCALE: Locale = "zh";
+export const DEFAULT_LOCALE: Locale = "en";
 /** 记住用户上次选择的语言 */
 export const LOCALE_COOKIE = "kb-lang";
 
@@ -8,7 +8,7 @@ export function isLocale(value: unknown): value is Locale {
   return typeof value === "string" && (LOCALES as readonly string[]).includes(value);
 }
 
-/** 中文为默认语言、不带前缀；英文使用 /en 前缀 */
+/** 英文为默认语言、不带前缀；中文使用 /zh 前缀 */
 export function localePath(locale: Locale, path: string): string {
   const clean = path.startsWith("/") ? path : `/${path}`;
   if (locale === DEFAULT_LOCALE) return clean;
@@ -62,7 +62,7 @@ const zh = {
   meta: {
     steps: (n: number) => `${n} 个排查步骤`,
     minutes: (n: number) => `约 ${n} 分钟`,
-    untranslated: "仅中文",
+    untranslated: "仅英文",
   },
   nav: {
     title: "目录",
@@ -78,7 +78,7 @@ const zh = {
   article: {
     breadcrumb: "当前位置",
     toc: "本文目录",
-    fallbackNotice: "",
+    fallbackNotice: "本文暂无中文版，以下显示英文原文。",
   },
   code: { copy: "复制", copied: "已复制", failed: "复制失败，请手动选择", aria: "复制代码" },
   callout: { note: "说明", tip: "提示", important: "重要", warning: "警告", caution: "危险操作" },

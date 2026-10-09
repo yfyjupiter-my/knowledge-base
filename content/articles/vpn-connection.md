@@ -1,44 +1,44 @@
 ---
-title: VPN 无法连接排查指南
-summary: 居家或出差时 VPN 客户端连不上、频繁断开或连上后无法访问内网系统的分步排查方法。
-category: 网络连接
-tags: [VPN, 远程办公, 内网, 证书, 809]
+title: VPN Connection Troubleshooting Guide
+summary: Step-by-step fixes for when the VPN client won't connect, keeps dropping, or connects but internal systems are unreachable while working from home or travelling.
+category: network
+tags: [VPN, remote work, intranet, certificate, 809]
 updated: 2026-09-18
 ---
 
-本指南适用于公司统一下发的 VPN 客户端（Windows / macOS）。请**按顺序**完成下列步骤，每完成一步就勾选一项，进度会自动保存在本机浏览器中。
+This guide covers the company-issued VPN client (Windows / macOS). Work through the steps **in order** and tick each one off as you go — your progress is saved automatically in this browser.
 
 > [!IMPORTANT]
-> 请勿安装来源不明的第三方 VPN 或"加速器"，它们会与公司 VPN 冲突，并可能违反信息安全规定。
+> Do not install third-party VPNs or "accelerators" from unknown sources. They conflict with the company VPN and may violate the information security policy.
 
-## 一、确认基础网络正常
+## 1. Confirm basic connectivity
 
-- [ ] 用浏览器打开任意外部网站（如 `https://www.baidu.com`），确认本机能正常上网
-- [ ] 如果使用的是酒店、机场等公共 Wi-Fi，先在浏览器中完成**网页认证登录**
-- [ ] 尝试切换到手机热点，排除当前网络屏蔽 VPN 端口的可能
+- [ ] Open any external website (e.g. `https://www.bing.com`) to confirm you are online
+- [ ] On hotel, airport or other public Wi-Fi, complete the **captive portal sign-in** in your browser first
+- [ ] Try your phone's hotspot to rule out the current network blocking VPN ports
 
 > [!TIP]
-> 部分酒店和访客网络会封锁 UDP 端口。如果手机热点可以连接而当前网络不行，基本可以确定是网络环境限制，可在客户端设置中切换为 **TCP / 443 模式**。
+> Some hotel and guest networks block UDP ports. If the hotspot works but the current network doesn't, it's almost certainly a network restriction — switch the client to **TCP / 443 mode** in its settings.
 
-## 二、检查客户端与账号
+## 2. Check the client and your account
 
-- [ ] 确认 VPN 客户端版本为最新版本（帮助 → 检查更新），低于 5.2 的版本已停止支持
-- [ ] 确认使用的是**域账号**（如 `zhangsan`），而不是邮箱地址
-- [ ] 确认域账号密码未过期——可以尝试登录一次公司邮箱网页版验证
-- [ ] 确认手机上的 MFA 验证器时间与网络时间同步（误差超过 30 秒会导致验证码无效）
+- [ ] Make sure the VPN client is up to date (Help → Check for updates). Versions older than 5.2 are no longer supported
+- [ ] Sign in with your **domain account** (e.g. `jsmith`), not your email address
+- [ ] Make sure your domain password hasn't expired — try signing in to webmail to verify
+- [ ] Make sure the clock on your phone's MFA authenticator is synced (a drift of more than 30 seconds invalidates codes)
 
-## 三、根据错误码处理
+## 3. Handle specific error codes
 
-| 错误码 | 含义 | 处理方式 |
+| Error code | Meaning | What to do |
 | --- | --- | --- |
-| 809 | 网络阻止了 VPN 流量 | 切换网络或改用 TCP/443 模式 |
-| 691 | 用户名或密码错误 | 检查域账号、重置密码 |
-| 812 | 账号无 VPN 权限 | 通过 OA 申请"远程访问"权限 |
-| 13801 | 证书无效或过期 | 检查系统时间是否正确；仍报错请联系 IT 重新签发证书 |
+| 809 | Network is blocking VPN traffic | Switch networks or use TCP/443 mode |
+| 691 | Wrong username or password | Check your domain account, reset password |
+| 812 | Account has no VPN permission | Request "Remote Access" in the OA system |
+| 13801 | Invalid or expired certificate | Check the system clock; if it persists, ask IT to reissue the certificate |
 
-## 四、重置本机网络组件
+## 4. Reset local network components
 
-如果以上步骤均无效，可以尝试重置网络配置。在 Windows 上以**管理员身份**打开 PowerShell，依次执行：
+If nothing above helps, reset your network configuration. On Windows, open PowerShell **as administrator** and run:
 
 ```powershell
 ipconfig /flushdns
@@ -46,25 +46,25 @@ netsh winsock reset
 netsh int ip reset
 ```
 
-macOS 用户在终端中执行：
+On macOS, run in Terminal:
 
 ```bash
 sudo dscacheutil -flushcache
 sudo killall -HUP mDNSResponder
 ```
 
-- [ ] 执行完重置命令并**重启电脑**
-- [ ] 重启后重新打开 VPN 客户端并连接
+- [ ] Run the reset commands and **restart your computer**
+- [ ] After restarting, open the VPN client and connect again
 
 > [!WARNING]
-> `netsh winsock reset` 会重置所有网络适配器的自定义设置（如手动配置的 IP 和代理），执行前请确认没有需要保留的特殊配置。
+> `netsh winsock reset` resets custom settings on every network adapter (such as manually configured IPs and proxies). Make sure you don't need to keep any special configuration before running it.
 
-## 五、连上后无法访问内网
+## 5. Connected but can't reach internal systems
 
-- [ ] 在 PowerShell 中执行 `Test-NetConnection oa.corp.example.com -Port 443`，确认 `TcpTestSucceeded` 为 `True`
-- [ ] 关闭浏览器中的代理插件或系统代理后再访问
-- [ ] 检查是否同时开启了其他 VPN / 代理软件，如有请完全退出
+- [ ] Run `Test-NetConnection oa.corp.example.com -Port 443` in PowerShell and confirm `TcpTestSucceeded` is `True`
+- [ ] Disable browser proxy extensions or the system proxy, then try again
+- [ ] Check whether another VPN / proxy app is running, and quit it completely
 
-## 仍未解决？
+## Still not working?
 
-请将以下信息截图后提交 IT 工单：客户端版本号、完整错误提示、所在网络环境（家庭宽带 / 公共 Wi-Fi / 手机热点）以及已完成的排查步骤。
+Submit an IT ticket with screenshots of: the client version, the full error message, your network type (home broadband / public Wi-Fi / mobile hotspot) and the steps you have completed.

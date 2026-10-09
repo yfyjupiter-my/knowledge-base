@@ -28,8 +28,3 @@
   label: { zh: 硬件故障, en: Hardware }
   description: { zh: 打印机、显示器、外设、电脑, en: "Printers, monitors, peripherals, PCs" }
   color: rose
-
-- id: hardwareeee
-  label: { zh: 硬件故障, en: Hardware }
-  description: { zh: 打印机、显示器、外设、电脑, en: "Printers, monitors, peripherals, PCs" }
-  color: rose

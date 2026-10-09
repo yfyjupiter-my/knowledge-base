@@ -1,62 +1,62 @@
 ---
-title: Outlook 无法启动或频繁崩溃
-summary: Outlook 卡在"正在加载配置文件"、启动后闪退、提示"无法启动 Microsoft Outlook"等问题的排查步骤，含安全模式、加载项与配置文件修复。
-category: 软件报错
-tags: [Outlook, Office, 邮箱, 崩溃, OST]
+title: Outlook Won't Start or Keeps Crashing
+summary: Fixes for Outlook stuck on "Loading Profile", closing right after launch, or showing "Cannot start Microsoft Outlook" — including safe mode, add-ins and profile repair.
+category: software
+tags: [Outlook, Office, email, crash, OST]
 updated: 2026-09-05
 ---
 
-本指南适用于 Microsoft 365 版 Outlook（Windows）。开始之前，请先保存其他 Office 文档。
+This guide applies to Microsoft 365 Outlook on Windows. Save any other open Office documents before you start.
 
 > [!TIP]
-> 排查期间可以先用浏览器访问 `https://mail.corp.example.com` 使用网页版邮箱，不影响收发邮件。
+> While troubleshooting, you can keep working in webmail at `https://mail.corp.example.com`.
 
-## 一、快速检查
+## 1. Quick checks
 
-- [ ] 完全关闭 Outlook，并在任务管理器中结束所有 `OUTLOOK.EXE` 进程后重新打开
-- [ ] 重启电脑后再试一次
-- [ ] 确认 C 盘剩余空间大于 5 GB（邮箱缓存文件可能非常大）
+- [ ] Close Outlook completely, end every `OUTLOOK.EXE` process in Task Manager, then reopen it
+- [ ] Restart your computer and try again
+- [ ] Make sure drive C has more than 5 GB free (the mailbox cache can be very large)
 
-## 二、以安全模式启动
+## 2. Start in safe mode
 
-安全模式会禁用所有加载项，用于判断是否由第三方插件引起。按 `Win + R`，输入：
+Safe mode disables all add-ins, which tells you whether a third-party add-in is the cause. Press `Win + R` and enter:
 
 ```bat
 outlook.exe /safe
 ```
 
-- [ ] 以安全模式启动 Outlook，观察是否能正常打开
-- [ ] 若安全模式正常：进入 **文件 → 选项 → 加载项 → COM 加载项 → 转到**，取消勾选全部加载项
-- [ ] 正常模式下重启 Outlook，再逐个重新启用加载项，找出导致问题的那一个
+- [ ] Start Outlook in safe mode and check whether it opens normally
+- [ ] If safe mode works: go to **File → Options → Add-ins → COM Add-ins → Go** and untick all add-ins
+- [ ] Restart Outlook normally, then re-enable add-ins one at a time to find the culprit
 
 > [!NOTE]
-> 公司必需的加载项（如会议室预订、邮件归档）不要卸载，只需禁用后告知 IT 是哪个加载项出现问题。
+> Don't uninstall required company add-ins (such as room booking or mail archiving). Just disable them and tell IT which one is causing trouble.
 
-## 三、修复 Office
+## 3. Repair Office
 
-- [ ] 打开 **设置 → 应用 → 已安装的应用**，找到 Microsoft 365，选择"修改"
-- [ ] 先选择**快速修复**；若无效再选择**联机修复**（需联网，约 20–30 分钟）
+- [ ] Open **Settings → Apps → Installed apps**, find Microsoft 365 and choose "Modify"
+- [ ] Run **Quick Repair** first; if that doesn't help, run **Online Repair** (needs internet, about 20–30 minutes)
 
-## 四、重建邮箱缓存与配置文件
+## 4. Rebuild the mailbox cache and profile
 
-缓存文件（`.ost`）损坏是 Outlook 卡在"正在加载配置文件"的常见原因。由于邮件都保存在服务器上，删除缓存后会自动重新下载。
+A corrupted cache file (`.ost`) is a common reason Outlook hangs on "Loading Profile". Your mail lives on the server, so deleting the cache simply triggers a fresh download.
 
-- [ ] 关闭 Outlook
-- [ ] 执行下方命令打开缓存目录，将其中的 `.ost` 文件重命名（例如在末尾加 `.bak`）
-- [ ] 重新打开 Outlook，等待邮件重新同步完成
+- [ ] Close Outlook
+- [ ] Run the command below to open the cache folder, then rename the `.ost` file (e.g. add `.bak` to the end)
+- [ ] Reopen Outlook and wait for your mail to finish syncing
 
 ```powershell
 explorer "$env:LOCALAPPDATA\Microsoft\Outlook"
 ```
 
 > [!CAUTION]
-> 只处理 `.ost` 文件。如果目录中存在 `.pst` 文件，那是**本地存档邮件**，删除后无法从服务器恢复！请勿删除或移动 `.pst` 文件。
+> Only touch `.ost` files. A `.pst` file in that folder is a **local archive** — it can't be recovered from the server if deleted. Never delete or move `.pst` files.
 
-如果重建缓存后仍然无法启动，可以新建配置文件：
+If Outlook still won't start after rebuilding the cache, create a new profile:
 
-- [ ] 打开 **控制面板 → 邮件 (Microsoft Outlook) → 显示配置文件 → 添加**
-- [ ] 输入公司邮箱地址完成配置，并在"启动时使用此配置文件"中选择新配置文件
+- [ ] Open **Control Panel → Mail (Microsoft Outlook) → Show Profiles → Add**
+- [ ] Enter your company email address to set it up, then select the new profile under "Always use this profile"
 
-## 仍未解决？
+## Still not working?
 
-请收集以下信息后联系 IT：完整报错截图、Office 版本号（**文件 → Office 帐户**），以及"事件查看器 → Windows 日志 → 应用程序"中来源为 `Outlook` 或 `Application Error` 的错误记录。
+Collect the following and contact IT: a screenshot of the full error, your Office version (**File → Office Account**), and any errors from source `Outlook` or `Application Error` under Event Viewer → Windows Logs → Application.

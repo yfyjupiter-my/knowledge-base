@@ -1,51 +1,51 @@
 ---
-title: 公司 Wi-Fi 连不上处理流程
-summary: 办公区 Wi-Fi 搜不到、密码正确却连不上、已连接但无法上网等情况的处理流程，覆盖 Windows、macOS 与手机。
-category: 网络连接
-tags: [Wi-Fi, 无线网络, 802.1X, DHCP, 办公网]
+title: Can't Connect to Office Wi-Fi
+summary: What to do when office Wi-Fi doesn't appear, rejects a correct password, or connects without internet access — for Windows, macOS and phones.
+category: network
+tags: [Wi-Fi, wireless, 802.1X, DHCP, office network]
 updated: 2026-09-25
 ---
 
-公司办公区提供以下无线网络：
+The office provides the following wireless networks:
 
-| 网络名称 (SSID) | 用途 | 认证方式 |
+| Network name (SSID) | Purpose | Authentication |
 | --- | --- | --- |
-| `Corp-Office` | 员工办公电脑 | 域账号（802.1X） |
-| `Corp-Mobile` | 员工手机 / 平板 | 域账号（802.1X） |
-| `Corp-Guest` | 访客 | 前台领取的临时密码 |
+| `Corp-Office` | Company laptops | Domain account (802.1X) |
+| `Corp-Mobile` | Employee phones / tablets | Domain account (802.1X) |
+| `Corp-Guest` | Visitors | Temporary password from reception |
 
 > [!NOTE]
-> `Corp-Office` 只允许加入域的公司电脑接入。个人电脑请连接 `Corp-Mobile`，访客请连接 `Corp-Guest`。
+> `Corp-Office` only accepts domain-joined company computers. Use `Corp-Mobile` for personal laptops and `Corp-Guest` for visitors.
 
-## 一、搜不到公司 Wi-Fi
+## 1. The office Wi-Fi doesn't appear
 
-- [ ] 确认电脑的无线开关 / 飞行模式已关闭（笔记本可能有 `Fn + F2` 等物理快捷键）
-- [ ] 确认自己在办公区内——会议室、茶水间等区域信号可能较弱
-- [ ] 询问身边同事是否能看到该网络，若大家都搜不到，请直接联系 IT（可能是 AP 故障）
+- [ ] Make sure wireless is on and airplane mode is off (some laptops have a hardware shortcut such as `Fn + F2`)
+- [ ] Make sure you're inside the office area — signal may be weak in meeting rooms and pantries
+- [ ] Ask colleagues nearby whether they can see the network. If nobody can, contact IT directly (an access point may be down)
 
-## 二、提示"无法连接到此网络"
+## 2. "Can't connect to this network"
 
-- [ ] 在网络列表中**忘记**该网络后重新连接
-- [ ] 用户名填写域账号（如 `zhangsan`），**不要**带 `@` 后缀
-- [ ] 弹出证书确认时，核对证书颁发者为 `Corp Root CA` 后选择"连接"
-- [ ] 如近期刚修改过域密码，请确认在所有设备上都已更新为新密码
+- [ ] **Forget** the network in your Wi-Fi list, then connect again
+- [ ] Enter your domain account as the username (e.g. `jsmith`) — **without** an `@` suffix
+- [ ] When prompted to trust a certificate, check that the issuer is `Corp Root CA`, then choose "Connect"
+- [ ] If you changed your domain password recently, make sure every device has the new password
 
 > [!CAUTION]
-> 旧密码保存在手机等设备上会持续自动重试，**连续 5 次**认证失败将导致域账号被锁定 30 分钟，并同时影响邮箱和 VPN 登录。
+> Devices with an old saved password keep retrying automatically. **5 consecutive** failed sign-ins lock your domain account for 30 minutes, which also blocks email and VPN sign-in.
 
-在 Windows 上忘记网络也可以用命令完成：
+On Windows you can also forget the network from the command line:
 
 ```powershell
 netsh wlan show profiles
 netsh wlan delete profile name="Corp-Office"
 ```
 
-## 三、已连接但无法上网
+## 3. Connected but no internet
 
-- [ ] 查看是否获取到了正确的 IP：地址应以 `10.` 开头，若为 `169.254.x.x` 说明没有拿到地址
-- [ ] 执行下方命令重新获取 IP 地址
-- [ ] 检查是否手动设置了固定 IP 或 DNS，如有请改回"自动获取"
-- [ ] 关闭系统代理或代理软件后重试
+- [ ] Check that you received a valid IP: it should start with `10.`. A `169.254.x.x` address means no address was assigned
+- [ ] Run the commands below to renew your IP address
+- [ ] Check whether a static IP or DNS was set manually; if so, switch back to "Obtain automatically"
+- [ ] Disable the system proxy or any proxy app and try again
 
 ```powershell
 ipconfig /release
@@ -54,14 +54,14 @@ ipconfig /all
 ```
 
 > [!TIP]
-> macOS 用户可在"系统设置 → 网络 → Wi-Fi → 详细信息 → TCP/IP"中点击 **续租 DHCP 租约**。
+> On macOS, go to System Settings → Network → Wi-Fi → Details → TCP/IP and click **Renew DHCP Lease**.
 
-## 四、网速慢或频繁掉线
+## 4. Slow or dropping connection
 
-- [ ] 靠近无线 AP（天花板上的白色圆盘设备）后测试是否改善
-- [ ] 在 Wi-Fi 设置中优先连接 5 GHz 频段
-- [ ] 更新无线网卡驱动（可通过"公司软件中心"一键更新）
+- [ ] Move closer to an access point (the white disc on the ceiling) and test again
+- [ ] Prefer the 5 GHz band in your Wi-Fi settings
+- [ ] Update your wireless driver (one click via the company Software Center)
 
-## 仍未解决？
+## Still not working?
 
-请联系 IT 服务台，并提供：所在楼层与工位号、设备类型、出现问题的时间点以及 `ipconfig /all` 的截图。
+Contact the IT Service Desk with: your floor and desk number, device type, when the problem started, and a screenshot of `ipconfig /all`.

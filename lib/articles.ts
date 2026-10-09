@@ -121,10 +121,10 @@ function parseFile(file: string, slug: string, contentLocale: Locale, requested:
 }
 
 const TRANSLATED = LOCALES.filter((l) => l !== DEFAULT_LOCALE);
-// vpn.md → 默认语言（中文）；vpn.en.md → 英文
+// vpn.md → 默认语言（英文）；vpn.zh.md → 中文
 const FILE_RE = new RegExp(`^(.+?)(?:\\.(${TRANSLATED.join("|")}))?\\.md$`, "i");
 
-/** 按 slug 分组：{ slug → { zh: "vpn.md", en: "vpn.en.md" } } */
+/** 按 slug 分组：{ slug → { en: "vpn.md", zh: "vpn.zh.md" } } */
 function listFiles(): Map<string, Partial<Record<Locale, string>>> {
   const groups = new Map<string, Partial<Record<Locale, string>>>();
   if (!fs.existsSync(ARTICLES_DIR)) return groups;

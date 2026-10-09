@@ -1,27 +1,27 @@
 ---
-title: 打印机脱机或无法打印
-summary: 办公室网络打印机显示"脱机"、打印任务卡在队列中、打印出乱码或找不到打印机的排查与处理方法。
-category: 硬件故障
-tags: [打印机, 脱机, 打印队列, 驱动, 扫描]
+title: Printer Offline or Not Printing
+summary: How to fix an office network printer that shows "Offline", jobs stuck in the queue, garbled output, or a printer that can't be found.
+category: hardware
+tags: [printer, offline, print queue, driver, scanning]
 updated: 2026-07-22
 ---
 
-公司各楼层的多功能打印机统一由打印服务器 `print.corp.example.com` 管理，按楼层命名，例如 `PRN-3F-East`。
+The multifunction printers on each floor are managed by the print server `print.corp.example.com` and named by floor, e.g. `PRN-3F-East`.
 
-## 一、检查打印机本身
+## 1. Check the printer itself
 
-- [ ] 确认打印机已开机，面板没有显示卡纸、缺纸或缺粉提示
-- [ ] 让身边同事试着打印一份文件，判断是**打印机故障**还是**个人电脑问题**
-- [ ] 若面板提示卡纸，按照面板动画指引打开对应舱门取出纸张
+- [ ] Make sure the printer is on and the panel shows no paper jam, empty tray or low toner warning
+- [ ] Ask a colleague to print something to tell whether it's a **printer fault** or a **problem with your PC**
+- [ ] If the panel reports a jam, follow the on-screen animation to open the right door and remove the paper
 
 > [!WARNING]
-> 定影器附近温度很高，取出卡纸时请勿触碰标有高温警示的部件。若纸张卡得很深无法取出，请勿强行拉扯，联系行政或 IT 处理。
+> The fuser area gets very hot — don't touch parts marked with a heat warning. If paper is jammed deep inside, don't force it; contact Facilities or IT.
 
-## 二、清理卡住的打印队列
+## 2. Clear a stuck print queue
 
-- [ ] 打开 **设置 → 蓝牙和其他设备 → 打印机和扫描仪**，选择对应打印机 → **打开打印队列**
-- [ ] 取消队列中所有任务
-- [ ] 若任务无法取消，以**管理员身份**打开 PowerShell 执行下方命令重启打印服务
+- [ ] Open **Settings → Bluetooth & devices → Printers & scanners**, select the printer → **Open print queue**
+- [ ] Cancel every job in the queue
+- [ ] If jobs won't cancel, open PowerShell **as administrator** and run the commands below to restart the print service
 
 ```powershell
 Stop-Service -Name Spooler -Force
@@ -29,30 +29,30 @@ Remove-Item "$env:SystemRoot\System32\spool\PRINTERS\*" -Force
 Start-Service -Name Spooler
 ```
 
-## 三、打印机显示"脱机"
+## 3. Printer shows "Offline"
 
-- [ ] 确认电脑已连接公司网络（访客 Wi-Fi 无法访问打印机）
-- [ ] 在打印队列窗口的"打印机"菜单中，取消勾选 **脱机使用打印机**
-- [ ] 执行下方命令确认与打印服务器的连通性
+- [ ] Make sure you're on the company network (guest Wi-Fi can't reach printers)
+- [ ] In the print queue window's "Printer" menu, untick **Use Printer Offline**
+- [ ] Run the command below to check connectivity to the print server
 
 ```powershell
 Test-NetConnection print.corp.example.com -Port 445
 ```
 
 > [!TIP]
-> 如果 `TcpTestSucceeded` 为 `False`，说明网络无法到达打印服务器，请先参考《公司 Wi-Fi 连不上处理流程》排查网络。
+> If `TcpTestSucceeded` is `False`, your network can't reach the print server. Work through "Can't Connect to Office Wi-Fi" first.
 
-## 四、重新添加打印机
+## 4. Re-add the printer
 
-- [ ] 删除当前打印机设备
-- [ ] 按 `Win + R`，输入 `\\print.corp.example.com`，双击所在楼层的打印机自动安装驱动
-- [ ] 打印一张测试页确认正常
+- [ ] Remove the current printer device
+- [ ] Press `Win + R`, enter `\\print.corp.example.com`, and double-click your floor's printer to install the driver automatically
+- [ ] Print a test page to confirm it works
 
-## 五、打印内容乱码或格式错误
+## 5. Garbled output or broken formatting
 
-- [ ] 尝试将文档另存为 PDF 后再打印
-- [ ] 在打印机属性中将驱动切换为 **PCL6** 通用驱动
+- [ ] Save the document as PDF and print that instead
+- [ ] In printer properties, switch the driver to the generic **PCL6** driver
 
-## 报修信息
+## Reporting a fault
 
-请在工单中写明：打印机名称（贴在机身正面）、面板上显示的错误代码，以及问题从何时开始。
+Include in your ticket: the printer name (on the front of the device), any error code shown on the panel, and when the problem started.

@@ -1,54 +1,54 @@
 ---
-title: 域账号被锁定或密码过期怎么办
-summary: 登录电脑、邮箱或 OA 时提示"账户已被锁定""密码已过期"的自助解锁与重置流程，以及如何找出导致反复锁定的设备。
-category: 账号权限
-tags: [域账号, 密码重置, 账户锁定, MFA, 自助服务]
+title: Domain Account Locked or Password Expired
+summary: Self-service unlock and reset when you see "account locked" or "password expired" signing in to your PC, email or OA — and how to find the device that keeps locking you out.
+category: account
+tags: [domain account, password reset, account lockout, MFA, self-service]
 updated: 2026-08-30
 ---
 
-公司域账号用于登录电脑、邮箱、VPN、Wi-Fi 和 OA 等所有系统。为保障安全，账号策略如下：
+Your company domain account signs you in to your PC, email, VPN, Wi-Fi, the OA system and more. For security, the account policy is:
 
-- 密码有效期 **90 天**，到期前 14 天开始邮件提醒
-- **连续 5 次**输错密码将锁定账号 **30 分钟**
-- 新密码至少 12 位，需包含大写字母、小写字母、数字中的三类，且不能与最近 5 次密码重复
+- Passwords expire every **90 days**; email reminders start 14 days before
+- **5 consecutive** wrong passwords lock the account for **30 minutes**
+- New passwords need at least 12 characters, including three of: uppercase, lowercase, digits; and can't match your last 5 passwords
 
-## 一、自助解锁 / 重置密码
+## 1. Self-service unlock / reset
 
-- [ ] 用手机浏览器打开自助服务门户 `https://passwd.corp.example.com`（无需连接公司网络）
-- [ ] 输入域账号，完成 MFA 验证（验证器 App 或短信）
-- [ ] 选择"解锁账号"；如忘记密码则选择"重置密码"
-- [ ] 等待约 **5 分钟**让新状态同步到所有系统后再登录
+- [ ] Open the self-service portal `https://passwd.corp.example.com` in your phone's browser (no company network needed)
+- [ ] Enter your domain account and complete MFA (authenticator app or SMS)
+- [ ] Choose "Unlock account", or "Reset password" if you've forgotten it
+- [ ] Wait about **5 minutes** for the change to sync to all systems before signing in
 
 > [!NOTE]
-> 首次使用自助门户需要提前绑定手机号。如果从未绑定过，请携带工牌到 IT 服务台现场处理。
+> You must have registered a phone number before using the portal for the first time. If you never did, bring your badge to the IT Service Desk.
 
-## 二、修改密码后更新所有设备
+## 2. Update every device after a password change
 
-修改密码后，**所有保存了旧密码的设备都会继续用旧密码尝试登录**，这是账号被反复锁定的最常见原因。
+After a password change, **every device that saved your old password keeps trying it** — the most common cause of repeated lockouts.
 
-- [ ] 手机：邮箱 App、Teams / 企业微信、`Corp-Mobile` Wi-Fi
-- [ ] 电脑：Outlook、映射的网络驱动器、VPN 客户端保存的凭据
-- [ ] 其他：平板、家用电脑上登录过的公司账号
+- [ ] Phone: mail app, Teams / WeCom, `Corp-Mobile` Wi-Fi
+- [ ] Computer: Outlook, mapped network drives, credentials saved in the VPN client
+- [ ] Other: tablets, home computers signed in to company accounts
 
-Windows 上可以用以下命令查看并清理保存的凭据：
+On Windows, list and clear saved credentials with:
 
 ```powershell
-# 列出保存的凭据
+# List saved credentials
 cmdkey /list
 
-# 删除指定凭据（将目标名替换为上一步列出的名称）
+# Delete a credential (replace the target with a name from the list above)
 cmdkey /delete:TERMSRV/fileserver.corp.example.com
 ```
 
 > [!WARNING]
-> 不要为了"方便"而把密码写在便签、共享文档或聊天记录中。IT 人员**绝不会**通过电话、邮件或聊天工具向你索要密码，遇到此类请求请立即向信息安全部举报。
+> Never write your password on sticky notes, shared documents or chats. IT staff will **never** ask for your password by phone, email or chat — report any such request to Information Security immediately.
 
-## 三、账号反复被锁定
+## 3. Account keeps getting locked
 
-- [ ] 在自助门户的"登录记录"页面查看锁定来源（会显示设备名称或 IP）
-- [ ] 根据来源找到对应设备，更新或删除其中保存的旧密码
-- [ ] 若来源为陌生设备或陌生地区，**立即修改密码**并联系信息安全部
+- [ ] Check the lockout source on the portal's "Sign-in history" page (it shows a device name or IP)
+- [ ] Find that device and update or remove the old saved password
+- [ ] If the source is an unknown device or location, **change your password immediately** and contact Information Security
 
-## 四、需要新增系统权限
+## 4. Need access to a new system
 
-账号锁定与系统权限是两回事。如果能登录但提示"无权访问"，请在 OA 中提交 **IT 服务 → 权限申请** 流程，由直属主管和系统负责人审批，通常 1 个工作日内开通。
+Lockouts and permissions are different things. If you can sign in but see "access denied", submit an **IT Services → Access Request** in the OA system. Your manager and the system owner approve it, usually within 1 business day.
