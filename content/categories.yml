@@ -1,0 +1,35 @@
+# 左侧栏分类。新增分类：复制一段并修改；删除分类：删掉对应的一段。
+# 保存并提交后约 60 秒内生效，无需重新构建。
+#
+# - id          英文小写短横线，用于网址（/?c=network）和文章 frontmatter 的 category
+# - label       中英文名称；文章的 category 也可以直接写中文名或英文名
+# - description 鼠标悬停和首页分类标题下显示的说明（可省略）
+# - color       sky / violet / amber / rose / emerald / teal / cyan / indigo / pink / orange / lime / slate
+#
+# 列表顺序即侧栏显示顺序。删除分类后，原属该分类的文章会自动归入"其他"，不会丢失。
+# "其他"是内置分类，不需要在这里配置。
+
+- id: network
+  label: { zh: 网络连接, en: Network }
+  description: { zh: VPN、Wi-Fi、内网访问、DNS, en: "VPN, Wi-Fi, intranet access, DNS" }
+  color: sky
+
+- id: account
+  label: { zh: 账号权限, en: Accounts & Access }
+  description: { zh: 登录、密码、MFA、权限申请, en: "Sign-in, passwords, MFA, permissions" }
+  color: violet
+
+- id: software
+  label: { zh: 软件报错, en: Software Errors }
+  description: { zh: 办公软件、客户端、系统报错, en: "Office apps, clients, system errors" }
+  color: amber
+
+- id: hardware
+  label: { zh: 硬件故障, en: Hardware }
+  description: { zh: 打印机、显示器、外设、电脑, en: "Printers, monitors, peripherals, PCs" }
+  color: rose
+
+- id: hardwareeee
+  label: { zh: 硬件故障, en: Hardware }
+  description: { zh: 打印机、显示器、外设、电脑, en: "Printers, monitors, peripherals, PCs" }
+  color: rose

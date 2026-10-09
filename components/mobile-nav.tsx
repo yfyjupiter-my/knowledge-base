@@ -5,11 +5,12 @@ import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import type { TreeCategory } from "@/lib/articles";
+import type { Category } from "@/lib/categories";
 import { getDictionary, type Locale } from "@/lib/i18n";
 import { SidebarTree } from "./sidebar-tree";
 
 /** 小屏下的目录：顶栏 ☰ 按钮 + 左侧抽屉，大屏隐藏（由常驻侧栏代替） */
-export function MobileNav({ lang, tree }: { lang: Locale; tree: TreeCategory[] }) {
+export function MobileNav({ lang, tree, categories }: { lang: Locale; tree: TreeCategory[]; categories: Category[] }) {
   const d = getDictionary(lang).nav;
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -75,7 +76,7 @@ export function MobileNav({ lang, tree }: { lang: Locale; tree: TreeCategory[] }
                 </button>
               </div>
               <div className="min-h-0 flex-1">
-                <SidebarTree lang={lang} tree={tree} onNavigate={() => setOpen(false)} />
+                <SidebarTree lang={lang} tree={tree} categories={categories} onNavigate={() => setOpen(false)} />
               </div>
             </div>
           </div>,

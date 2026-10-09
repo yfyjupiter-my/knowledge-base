@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode }
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ChevronRight, House, Search } from "lucide-react";
-import { getCategory, type CategoryId } from "@/lib/categories";
+import { getCategory, type Category, type CategoryId } from "@/lib/categories";
 import type { TreeArticle, TreeCategory } from "@/lib/articles";
 import { HTML_LANG, getDictionary, localePath, stripLocale, type Locale } from "@/lib/i18n";
 import { onCategoryChange, requestSearch, type CategoryFilter } from "@/lib/search-events";
@@ -62,13 +62,14 @@ function useActiveHeading(ids: string[]) {
 interface SidebarTreeProps {
   lang: Locale;
   tree: TreeCategory[];
+  categories: Category[];
   /** 只给常驻侧栏开启，避免抽屉里的副本重复响应快捷键 */
   shortcut?: boolean;
   /** 点击任一链接后的回调（移动端用于关闭抽屉） */
   onNavigate?: () => void;
 }
 
-export function SidebarTree({ lang, tree, shortcut, onNavigate }: SidebarTreeProps) {
+export function SidebarTree({ lang, tree, categories, shortcut, onNavigate }: SidebarTreeProps) {
   const d = getDictionary(lang);
   const router = useRouter();
   const path = stripLocale(usePathname());
@@ -94,9 +95,9 @@ export function SidebarTree({ lang, tree, shortcut, onNavigate }: SidebarTreePro
   useEffect(() => {
     if (!isHome) return;
     const c = new URLSearchParams(window.location.search).get("c");
-    setHomeCategory(c && getCategory(c as CategoryId).id === c ? (c as CategoryId) : "all");
+    setHomeCategory(c && categories.some((x) => x.id === c) ? c : "all");
     return onCategoryChange(setHomeCategory);
-  }, [isHome]);
+  }, [isHome, categories]);
 
   useEffect(() => {
     if (!shortcut) return;
@@ -193,7 +194,7 @@ export function SidebarTree({ lang, tree, shortcut, onNavigate }: SidebarTreePro
 
         <ul className="space-y-2.5">
           {visible.map((group) => {
-            const c = getCategory(group.id);
+            const c = getCategory(group.id, categories);
             const label = c.label[lang];
             const open = words.length > 0 || !collapsed.has(group.id);
             const count = tree.find((t) => t.id === group.id)?.articles.length ?? 0;

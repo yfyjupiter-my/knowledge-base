@@ -5,7 +5,7 @@
 - **零数据库**：所有文章都是 `content/articles/` 下的 Markdown 文件，用 Git 维护即可
 - **毫秒级搜索**：基于 Fuse.js 在浏览器端检索，支持模糊匹配、多关键词、错误码，命中处高亮显示
 - **目录树导航**：左侧按分类展示全部文章，可折叠、可即时筛选（`Ctrl K`）；当前文章自动展开章节，并随滚动高亮
-- **分类筛选**：网络连接 / 账号权限 / 软件报错 / 硬件故障
+- **分类可自定义**：在 `content/categories.yml` 中增删分类，无需改代码或重建镜像
 - **交互式排查清单**：勾选已完成的步骤，进度自动保存在本机浏览器中
 - **Markdown 增强**：代码高亮与一键复制（HTTP 内网环境也能复制）、GitHub 风格警告框、表格、自动目录
 - **中英双语**：界面与文章均支持中文 / English 一键切换，记住用户的语言偏好；未翻译的文章自动回退显示中文
@@ -51,7 +51,7 @@ content/articles/vpn-connection.md  →  /articles/vpn-connection
 ---
 title: 显示器无信号排查          # 标题（必填）
 summary: 一句话说明适用场景        # 显示在首页列表和文章标题下，并参与搜索
-category: 硬件故障               # 网络连接 / 账号权限 / 软件报错 / 硬件故障（或 network / account / software / hardware）
+category: 硬件故障               # categories.yml 中分类的 id、中文名或英文名，找不到时归入"其他"
 tags: [显示器, 扩展坞, HDMI]      # 关键词，搜索权重较高
 updated: 2026-10-08              # 更新日期，用于排序
 ---
@@ -94,7 +94,7 @@ content/articles/vpn-connection.md      →  /articles/vpn-connection      （�
 content/articles/vpn-connection.en.md   →  /en/articles/vpn-connection   （英文）
 ```
 
-- 英文版的 frontmatter 格式相同，`category` 可写英文 id（`network` / `account` / `software` / `hardware`）
+- 英文版的 frontmatter 格式相同，`category` 可写分类的英文 id（如 `network`）
 - 没有英文版的文章，在英文站点中会显示中文内容，并带有"尚未翻译"提示和列表标记
 - 建议中英文版本保持相同的排查步骤结构；两种语言的排查进度分别保存
 
@@ -105,12 +105,28 @@ content/articles/vpn-connection.en.md   →  /en/articles/vpn-connection   （�
 | 运行方式 | 生效方式 |
 | --- | --- |
 | `npm run dev` | 保存后刷新页面即可 |
-| Docker（默认挂载了 `content/articles`） | 约 **60 秒**内自动生效，无需重启或重建镜像 |
+| Docker（默认挂载了 `content/`） | 约 **60 秒**内自动生效，无需重启或重建镜像 |
 | Docker（未挂载目录） | 需要重新构建镜像 |
 
-### 修改分类、界面文案或站点信息
+### 新建或删除分类
 
-- 分类（中英文名称）：`lib/categories.ts`
+左侧栏的分类定义在 `content/categories.yml`，与文章一样修改后提交到 Git 即可，生效方式同上表：
+
+```yaml
+- id: printer                       # 英文小写短横线，用于网址 /?c=printer 和文章的 category
+  label: { zh: 打印扫描, en: Printing }
+  description: { zh: 打印机、扫描仪、复印机, en: "Printers, scanners, copiers" }   # 可省略
+  color: emerald                    # 见下方色板
+```
+
+- **新建**：复制一段并修改；列表顺序即侧栏顺序。还没有文章的新分类也会显示在侧栏（计数 0）
+- **删除**：删掉对应的一段。原属该分类的文章会自动归入"其他"，不会丢失
+- **颜色**：`sky` / `violet` / `amber` / `rose` / `emerald` / `teal` / `cyan` / `indigo` / `pink` / `orange` / `lime` / `slate`（只能从色板中选择）
+- "其他"是内置分类，无需配置，只在有未归类文章时显示
+- 文件写错或缺失时，站点会使用内置的默认四个分类，并在服务端日志中打印 `[categories]` 警告
+
+### 修改界面文案或站点信息
+
 - 站点名称、界面文案、IT 服务台联系方式：`lib/i18n.ts`
 
 ### 语言路由
@@ -144,7 +160,7 @@ git pull && docker compose up -d --build   # 更新代码后重新部署
 KB_PORT=8080 docker compose up -d
 ```
 
-`docker-compose.yml` 默认以只读方式将 `./content/articles` 挂载进容器，因此在服务器上 `git pull` 更新文章后，无需重建镜像即可生效。
+`docker-compose.yml` 默认以只读方式将 `./content` 挂载进容器，因此在服务器上 `git pull` 更新文章或分类后，无需重建镜像即可生效。
 
 ### 直接使用 Docker
 
@@ -152,9 +168,9 @@ KB_PORT=8080 docker compose up -d
 docker build -t knowledge-base:latest .
 docker run -d --name knowledge-base -p 3000:3000 --restart unless-stopped knowledge-base:latest
 
-# 可选：挂载外部文章目录
+# 可选：挂载外部内容目录（文章 + 分类配置）
 docker run -d --name knowledge-base -p 3000:3000 \
-  -v "$(pwd)/content/articles:/app/content/articles:ro" knowledge-base:latest
+  -v "$(pwd)/content:/app/content:ro" knowledge-base:latest
 ```
 
 ### 镜像说明
@@ -188,9 +204,12 @@ docker run -d --name knowledge-base -p 3000:3000 \
 │   ├── articles.ts               # 读取并解析 Markdown，生成目录树数据
 │   ├── search-events.ts          # 侧栏与首页搜索之间的窗口事件
 │   ├── markdown-plugins.ts       # 警告框 / 清单的 remark、rehype 插件
-│   ├── categories.ts             # 分类定义
+│   ├── categories.ts             # 分类类型、色板与匹配规则
+│   ├── categories.server.ts      # 读取并校验 content/categories.yml
 │   └── i18n.ts                   # 语言配置与中英文界面文案
-├── content/articles/             # 📝 文章目录（xxx.md 中文 / xxx.en.md 英文）
+├── content/
+│   ├── categories.yml            # 🗂️ 分类配置（增删分类改这里）
+│   └── articles/                 # 📝 文章目录（xxx.md 中文 / xxx.en.md 英文）
 ├── Dockerfile
 ├── docker-compose.yml
 └── .dockerignore

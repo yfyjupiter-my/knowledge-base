@@ -6,6 +6,7 @@ import { LanguageSwitcher } from "@/components/language-switcher";
 import { MobileNav } from "@/components/mobile-nav";
 import { SidebarTree } from "@/components/sidebar-tree";
 import { getArticleTree } from "@/lib/articles";
+import { getCategories } from "@/lib/categories.server";
 import { HTML_LANG, LOCALES, getDictionary, isLocale, localePath } from "@/lib/i18n";
 import "highlight.js/styles/github-dark.css";
 import "../globals.css";
@@ -39,13 +40,14 @@ export default async function RootLayout({ children, params }: Props) {
   if (!isLocale(lang)) notFound();
   const d = getDictionary(lang);
   const tree = getArticleTree(lang);
+  const categories = getCategories();
 
   return (
     <html lang={HTML_LANG[lang]}>
       <body className="min-h-dvh">
         <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/80 backdrop-blur dark:border-slate-800 dark:bg-slate-950/80">
           <div className="flex h-14 items-center justify-between gap-4 px-4 lg:px-6">
-            <MobileNav lang={lang} tree={tree} />
+            <MobileNav lang={lang} tree={tree} categories={categories} />
             <Link href={localePath(lang, "/")} className="mr-auto flex min-w-0 items-center gap-2 font-semibold">
               <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-sky-600 text-white">
                 <LifeBuoy className="size-5" aria-hidden />
@@ -62,7 +64,7 @@ export default async function RootLayout({ children, params }: Props) {
         </header>
         <div className="lg:grid lg:grid-cols-[280px_minmax(0,1fr)]">
           <aside className="sticky top-14 hidden h-[calc(100dvh-3.5rem)] border-r border-slate-200 bg-slate-50 lg:block dark:border-slate-800 dark:bg-slate-900/40">
-            <SidebarTree lang={lang} tree={tree} shortcut />
+            <SidebarTree lang={lang} tree={tree} categories={categories} shortcut />
           </aside>
           <div className="flex min-h-[calc(100dvh-3.5rem)] min-w-0 flex-col bg-white dark:bg-slate-950">
             <main className="flex-1">{children}</main>

@@ -4,7 +4,7 @@ import { useDeferredValue, useEffect, useMemo, useRef, useState, type ReactNode 
 import Fuse, { type FuseResult, type FuseResultMatch, type IFuseOptions, type Expression } from "fuse.js";
 import { Search, SearchX, X } from "lucide-react";
 import { ArticleRow } from "./article-card";
-import { CATEGORIES, type CategoryId } from "@/lib/categories";
+import { getCategory, type Category } from "@/lib/categories";
 import type { SearchDoc } from "@/lib/articles";
 import { getDictionary, type Locale } from "@/lib/i18n";
 import { announceCategory, onSearchRequest, type CategoryFilter } from "@/lib/search-events";
@@ -76,7 +76,7 @@ function buildQuery(query: string): string | Expression {
   return { $and: tokens.map((t) => ({ $or: KEYS.map((k) => ({ [k.name]: t })) })) };
 }
 
-export function SearchExperience({ lang, docs }: { lang: Locale; docs: SearchDoc[] }) {
+export function SearchExperience({ lang, docs, categories }: { lang: Locale; docs: SearchDoc[]; categories: Category[] }) {
   const d = getDictionary(lang);
   const t = d.search;
   const [query, setQuery] = useState("");
@@ -91,8 +91,8 @@ export function SearchExperience({ lang, docs }: { lang: Locale; docs: SearchDoc
     const params = new URLSearchParams(window.location.search);
     setQuery(params.get("q") ?? "");
     const c = params.get("c");
-    if (c && CATEGORIES.some((x) => x.id === c)) setCategory(c as CategoryId);
-  }, []);
+    if (c && categories.some((x) => x.id === c)) setCategory(c);
+  }, [categories]);
 
   // 已在首页时，侧栏通过事件切换分类或提交搜索
   useEffect(
@@ -148,7 +148,7 @@ export function SearchExperience({ lang, docs }: { lang: Locale; docs: SearchDoc
 
   const minLen = Math.min(2, deferredQuery.replace(/\s/g, "").length || 1);
 
-  const activeCategory = category === "all" ? null : CATEGORIES.find((c) => c.id === category);
+  const activeCategory = category === "all" ? null : categories.find((c) => c.id === category);
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8 sm:px-8 sm:py-10 lg:mx-0 lg:px-10">
@@ -188,7 +188,7 @@ export function SearchExperience({ lang, docs }: { lang: Locale; docs: SearchDoc
         {/* 大屏由左侧目录树筛选分类；小屏目录收在抽屉里，因此保留分类按钮 */}
         <div className="-mx-4 mt-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] lg:hidden" role="group" aria-label={t.filterAria}>
           <FilterChip active={category === "all"} onClick={() => setCategory("all")} label={t.all} count={docs.length} />
-          {CATEGORIES.map((c) => (
+          {categories.map((c) => (
             <FilterChip
               key={c.id}
               active={category === c.id}
@@ -238,6 +238,7 @@ export function SearchExperience({ lang, docs }: { lang: Locale; docs: SearchDoc
                 <li key={item.slug}>
                   <ArticleRow
                     article={item}
+                    category={getCategory(item.category, categories)}
                     lang={lang}
                     title={highlight(item.title, titleIdx)}
                     summary={item.summary ? highlight(item.summary, summaryIdx) : undefined}

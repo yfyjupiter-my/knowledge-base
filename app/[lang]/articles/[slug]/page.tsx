@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ChevronRight, Languages } from "lucide-react";
 import { getAllArticles, getArticle } from "@/lib/articles";
 import { getCategory } from "@/lib/categories";
+import { getCategories } from "@/lib/categories.server";
 import { HTML_LANG, LOCALES, getDictionary, isLocale, localePath, type Locale } from "@/lib/i18n";
 import { ArticleMetaRow, CategoryBadge } from "@/components/article-card";
 import { ChecklistProgress, ChecklistProvider } from "@/components/checklist";
@@ -40,7 +41,7 @@ export default async function ArticlePage({ params }: Props) {
   const d = getDictionary(lang);
   const hasSteps = article.stepCount > 0;
   const contentLang: Locale = article.contentLocale;
-  const category = getCategory(article.category);
+  const category = getCategory(article.category, getCategories());
 
   return (
     <ChecklistProvider lang={lang} storageKey={`kb:checklist:${article.slug}:${contentLang}:${article.updated}`}>
@@ -75,7 +76,7 @@ export default async function ArticlePage({ params }: Props) {
         )}
 
         <header className="mt-5 border-b border-slate-200 pb-6 dark:border-slate-800" lang={HTML_LANG[contentLang]}>
-          <CategoryBadge id={article.category} lang={lang} />
+          <CategoryBadge category={category} lang={lang} />
           <h1 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">{article.title}</h1>
           {article.summary && <p className="mt-3 text-slate-600 dark:text-slate-400">{article.summary}</p>}
           <ArticleMetaRow article={article} lang={lang} className="mt-4" />

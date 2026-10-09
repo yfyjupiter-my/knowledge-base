@@ -1,12 +1,11 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { CalendarDays, Clock, Languages, ListChecks } from "lucide-react";
-import { getCategory } from "@/lib/categories";
+import type { Category } from "@/lib/categories";
 import type { ArticleMeta } from "@/lib/articles";
 import { HTML_LANG, getDictionary, localePath, type Locale } from "@/lib/i18n";
 
-export function CategoryBadge({ id, lang }: { id: ArticleMeta["category"]; lang: Locale }) {
-  const c = getCategory(id);
+export function CategoryBadge({ category: c, lang }: { category: Category; lang: Locale }) {
   return (
     <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset ${c.badgeClass}`}>
       <span className={`size-1.5 rounded-full ${c.dotClass}`} aria-hidden />
@@ -39,6 +38,7 @@ export function ArticleMetaRow({ article, lang, className = "" }: { article: Art
 
 interface ArticleRowProps {
   article: ArticleMeta;
+  category: Category;
   lang: Locale;
   /** 可传入带高亮的标题/摘要 */
   title?: ReactNode;
@@ -47,8 +47,7 @@ interface ArticleRowProps {
 }
 
 /** 首页列表中的一行：与左侧目录树同样紧凑的视觉密度 */
-export function ArticleRow({ article, lang, title, summary, snippet }: ArticleRowProps) {
-  const c = getCategory(article.category);
+export function ArticleRow({ article, category: c, lang, title, summary, snippet }: ArticleRowProps) {
   return (
     <Link
       href={localePath(lang, `/articles/${encodeURIComponent(article.slug)}`)}

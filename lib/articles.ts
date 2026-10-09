@@ -3,7 +3,8 @@ import path from "node:path";
 import { cache } from "react";
 import matter from "gray-matter";
 import GithubSlugger from "github-slugger";
-import { CATEGORIES, resolveCategory, type CategoryId } from "./categories";
+import { OTHER_ID, resolveCategory, type CategoryId } from "./categories";
+import { getCategories } from "./categories.server";
 import { DEFAULT_LOCALE, LOCALES, type Locale } from "./i18n";
 
 export const ARTICLES_DIR = path.join(process.cwd(), "content", "articles");
@@ -107,7 +108,7 @@ function parseFile(file: string, slug: string, contentLocale: Locale, requested:
     slug,
     title: typeof data.title === "string" && data.title.trim() ? data.title.trim() : slug,
     summary: typeof data.summary === "string" ? data.summary.trim() : "",
-    category: resolveCategory(data.category).id,
+    category: resolveCategory(data.category, getCategories()).id,
     tags: Array.isArray(data.tags) ? data.tags.map(String) : [],
     updated: formatDate(data.updated, fs.statSync(fullPath).mtime),
     readingMinutes: Math.max(1, Math.round(minutes)),
@@ -165,10 +166,10 @@ export interface TreeCategory {
   articles: TreeArticle[];
 }
 
-/** 按 CATEGORIES 顺序分组（未归类的排在最后），组内按标题排序 */
+/** 按 categories.yml 的顺序分组（未归类的排在最后），组内按标题排序 */
 export function getArticleTree(locale: Locale): TreeCategory[] {
   const all = getAllArticles(locale);
-  const order: CategoryId[] = [...CATEGORIES.map((c) => c.id), "other"];
+  const order: CategoryId[] = [...getCategories().map((c) => c.id), OTHER_ID];
   return order
     .map((id) => ({
       id,
@@ -177,7 +178,8 @@ export function getArticleTree(locale: Locale): TreeCategory[] {
         .sort((a, b) => a.title.localeCompare(b.title, locale === "zh" ? "zh-CN" : "en"))
         .map(({ slug, title, tags, updated, contentLocale, headings }) => ({ slug, title, tags, updated, contentLocale, headings })),
     }))
-    .filter((c) => c.articles.length > 0);
+    // 新建的分类即使还没有文章也显示，"其他"只在有文章时显示
+    .filter((c) => c.id !== OTHER_ID || c.articles.length > 0);
 }
 
 export function getSearchDocs(locale: Locale): SearchDoc[] {

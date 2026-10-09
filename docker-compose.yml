@@ -8,8 +8,8 @@ services:
       - "${KB_PORT:-3200}:3000"
     restart: unless-stopped
     volumes:
-      # 挂载本地文章目录：修改 Markdown 后约 60 秒内生效，无需重新构建镜像
-      # 如需使用镜像内置的文章，删除下面这一行即可
-      - ./content/articles:/app/content/articles:ro
+      # 挂载本地 content 目录（文章 + 分类配置）：修改后约 60 秒内生效，无需重新构建镜像
+      # 如需使用镜像内置的内容，删除下面这一行即可
+      - ./content:/app/content:ro
     environment:
       - NODE_ENV=production
