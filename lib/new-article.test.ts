@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { BODY_TEMPLATE, SLUG_RE, formatLocalDate, slugify, suggestSlug } from "./new-article";
+import matter from "gray-matter";
+import { BODY_TEMPLATE, SLUG_RE, buildArticleMarkdown, formatLocalDate, slugify, suggestSlug, type ArticleInput } from "./new-article";
 
 describe("slugify", () => {
   it("转为小写并用短横线连接单词", () => {
@@ -52,5 +53,110 @@ describe("formatLocalDate", () => {
 describe("BODY_TEMPLATE", () => {
   it("包含章节标题和两个空步骤", () => {
     expect(BODY_TEMPLATE).toBe("## 1. First steps\n\n- [ ] \n- [ ] \n");
+  });
+});
+
+function article(overrides: Partial<ArticleInput> = {}): ArticleInput {
+  return {
+    title: "Monitor Shows No Signal",
+    slug: "monitor-no-signal",
+    summary: "What to check when the screen stays black.",
+    category: "hardware",
+    tags: ["monitor", "dock", "HDMI"],
+    updated: "2026-10-09",
+    body: "## 1. Cables\n\n- [ ] Reseat the cable\n",
+    ...overrides,
+  };
+}
+
+/** 按站点 lib/articles.ts 的方式读回 frontmatter */
+function readBack(markdown: string): Record<string, unknown> & { content: string } {
+  const { data, content } = matter(markdown);
+  const updated = data.updated instanceof Date ? data.updated.toISOString().slice(0, 10) : data.updated;
+  return { ...data, updated, content };
+}
+
+describe("buildArticleMarkdown", () => {
+  it("输出与现有文章一致的格式", () => {
+    expect(buildArticleMarkdown(article())).toBe(
+      [
+        "---",
+        "title: Monitor Shows No Signal",
+        "summary: What to check when the screen stays black.",
+        "category: hardware",
+        "tags: [monitor, dock, HDMI]",
+        "updated: 2026-10-09",
+        "---",
+        "",
+        "## 1. Cables",
+        "",
+        "- [ ] Reseat the cable",
+        "",
+      ].join("\n"),
+    );
+  });
+
+  it("无标签时输出 tags: []", () => {
+    expect(buildArticleMarkdown(article({ tags: [] }))).toContain("\ntags: []\n");
+  });
+
+  it("正文为空时以 frontmatter 结束且只有一个结尾换行", () => {
+    expect(buildArticleMarkdown(article({ body: "" })).endsWith("updated: 2026-10-09\n---\n")).toBe(true);
+  });
+
+  it("统一换行为 \n 并去掉正文首尾空行", () => {
+    const md = buildArticleMarkdown(article({ body: "\r\n\r\nLine 1\r\nLine 2\r\n\r\n\r\n" }));
+    expect(md).not.toContain("\r");
+    expect(md.endsWith("---\n\nLine 1\nLine 2\n")).toBe(true);
+  });
+
+  const tricky = [
+    "Error: 0x80070005",
+    "C# build #2",
+    'He said "hi"',
+    "It's fine",
+    "[bracketed]",
+    "{braced}",
+    "a, b",
+    "2026-01-01",
+    "true",
+    "null",
+    "123",
+    "- dash first",
+    "* star first",
+    "> quote first",
+    "| pipe",
+    "@at",
+    "`tick`",
+    "%percent",
+    "&anchor",
+    "!tag",
+    "?question",
+    "back\slash",
+    "中文标题：冒号",
+  ];
+
+  it.each(tricky)("title/summary 含特殊值 %j 时读回一致", (value) => {
+    const back = readBack(buildArticleMarkdown(article({ title: value, summary: value })));
+    expect(back.title).toBe(value);
+    expect(back.summary).toBe(value);
+  });
+
+  it.each(tricky)("tag 含特殊值 %j 时读回一致", (value) => {
+    const back = readBack(buildArticleMarkdown(article({ tags: [value, "plain"] })));
+    expect(back.tags).toEqual([value, "plain"]);
+  });
+
+  it("其余字段读回一致，正文不变", () => {
+    const input = article();
+    const back = readBack(buildArticleMarkdown(input));
+    expect(back).toMatchObject({
+      title: input.title,
+      summary: input.summary,
+      category: input.category,
+      tags: input.tags,
+      updated: input.updated,
+    });
+    expect(back.content.trim()).toBe(input.body.trim());
   });
 });
