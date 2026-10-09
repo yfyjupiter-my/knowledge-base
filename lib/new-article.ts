@@ -75,3 +75,55 @@ export function buildArticleMarkdown(article: ArticleInput): string {
   const body = article.body.replace(/\r\n?/g, "\n").replace(/^\n+/, "").replace(/\s+$/, "");
   return body ? `${head}\n${body}\n` : head;
 }
+
+export type ArticleField = keyof ArticleInput;
+export type FieldError = "required" | "invalidSlug" | "unknownCategory" | "invalidDate" | "exists";
+export type FieldErrors = Partial<Record<ArticleField, FieldError>>;
+export type ValidationResult = { ok: true; value: ArticleInput } | { ok: false; fieldErrors: FieldErrors };
+
+const DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+function isValidDate(value: string): boolean {
+  const m = DATE_RE.exec(value);
+  if (!m) return false;
+  const [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  const date = new Date(Date.UTC(y, mo - 1, d));
+  return date.getUTCFullYear() === y && date.getUTCMonth() === mo - 1 && date.getUTCDate() === d;
+}
+
+function str(value: unknown): string {
+  return typeof value === "string" ? value : "";
+}
+
+/** 来自客户端的数据不可信：类型不对的字段按空值处理 */
+function normalize(raw: unknown): ArticleInput {
+  const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  const tags: string[] = [];
+  for (const t of Array.isArray(r.tags) ? r.tags : []) {
+    const v = str(t).trim();
+    if (v && !tags.includes(v)) tags.push(v);
+  }
+  return {
+    title: str(r.title).trim(),
+    slug: str(r.slug).trim(),
+    summary: str(r.summary).replace(/\s*\r?\n\s*/g, " ").trim(),
+    category: str(r.category).trim(),
+    tags,
+    updated: str(r.updated).trim(),
+    body: str(r.body).replace(/\r\n?/g, "\n"),
+  };
+}
+
+export function validateArticleInput(raw: unknown, categoryIds: readonly string[]): ValidationResult {
+  const value = normalize(raw);
+  const fieldErrors: FieldErrors = {};
+  if (!value.title) fieldErrors.title = "required";
+  if (!value.slug) fieldErrors.slug = "required";
+  else if (!SLUG_RE.test(value.slug)) fieldErrors.slug = "invalidSlug";
+  if (!value.summary) fieldErrors.summary = "required";
+  if (!value.category) fieldErrors.category = "required";
+  else if (!categoryIds.includes(value.category)) fieldErrors.category = "unknownCategory";
+  if (!value.updated) fieldErrors.updated = "required";
+  else if (!isValidDate(value.updated)) fieldErrors.updated = "invalidDate";
+  return Object.keys(fieldErrors).length > 0 ? { ok: false, fieldErrors } : { ok: true, value };
+}

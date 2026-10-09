@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import matter from "gray-matter";
-import { BODY_TEMPLATE, SLUG_RE, buildArticleMarkdown, formatLocalDate, slugify, suggestSlug, type ArticleInput } from "./new-article";
+import { BODY_TEMPLATE, SLUG_RE, buildArticleMarkdown, formatLocalDate, slugify, suggestSlug, validateArticleInput, type ArticleInput } from "./new-article";
 
 describe("slugify", () => {
   it("转为小写并用短横线连接单词", () => {
@@ -158,5 +158,60 @@ describe("buildArticleMarkdown", () => {
       updated: input.updated,
     });
     expect(back.content.trim()).toBe(input.body.trim());
+  });
+});
+
+describe("validateArticleInput", () => {
+  const ids = ["network", "hardware"];
+
+  it("合法输入通过并返回规范化后的值", () => {
+    const result = validateArticleInput(
+      article({
+        title: "  Title  ",
+        summary: " line one\r\n  line two ",
+        tags: [" a ", "b", "a", "", "  "],
+        body: "x\r\ny",
+      }),
+      ids,
+    );
+    expect(result).toEqual({
+      ok: true,
+      value: article({ title: "Title", summary: "line one line two", tags: ["a", "b"], body: "x\ny" }),
+    });
+  });
+
+  it("必填项为空（或只有空白）时报 required", () => {
+    const result = validateArticleInput(article({ title: " ", slug: "", summary: "\n", category: "", updated: "" }), ids);
+    expect(result).toEqual({
+      ok: false,
+      fieldErrors: { title: "required", slug: "required", summary: "required", category: "required", updated: "required" },
+    });
+  });
+
+  it.each(["_draft", "Abc", "a b", "../etc", "a.md", "-x"])("slug %j 报 invalidSlug", (slug) => {
+    expect(validateArticleInput(article({ slug }), ids)).toEqual({ ok: false, fieldErrors: { slug: "invalidSlug" } });
+  });
+
+  it("分类不在列表中报 unknownCategory", () => {
+    expect(validateArticleInput(article({ category: "other" }), ids)).toEqual({
+      ok: false,
+      fieldErrors: { category: "unknownCategory" },
+    });
+  });
+
+  it.each(["2026-13-01", "2026-02-30", "2026/10/09", "09-10-2026", "2026-1-1"])("日期 %j 报 invalidDate", (updated) => {
+    expect(validateArticleInput(article({ updated }), ids)).toEqual({ ok: false, fieldErrors: { updated: "invalidDate" } });
+  });
+
+  it("闰年 2 月 29 日合法", () => {
+    expect(validateArticleInput(article({ updated: "2028-02-29" }), ids).ok).toBe(true);
+  });
+
+  it("非对象或字段类型错误时按空值处理，不抛异常", () => {
+    expect(validateArticleInput(null, ids).ok).toBe(false);
+    const result = validateArticleInput({ ...article(), title: 42, tags: "a,b" }, ids);
+    expect(result).toEqual({ ok: false, fieldErrors: { title: "required" } });
+    const ok = validateArticleInput({ ...article(), tags: ["x", 1, null] }, ids);
+    expect(ok.ok && ok.value.tags).toEqual(["x"]);
   });
 });
