@@ -30,6 +30,7 @@ npm run dev          # 启动开发服务器 http://localhost:3000
 npm run build        # 生产构建
 npm run start        # 运行生产构建
 npm run typecheck    # TypeScript 类型检查
+npm test             # 运行单元测试（Vitest）
 ```
 
 ## 2. 新建或修改文章
@@ -41,6 +42,19 @@ content/articles/vpn-connection.md  →  /articles/vpn-connection
 ```
 
 ### 新建文章
+
+**推荐：使用图形界面（仅本机开发模式）**
+
+```bash
+npm run dev
+```
+
+打开 http://localhost:3000/new（或点击顶栏的 **New article**），填写标题、摘要、分类、标签和正文，右侧会实时预览。点击 **Create** 后自动生成 `content/articles/<文件名>.md`，并跳转到新文章页面，确认无误后用 Git 提交即可。
+
+- 文件名根据标题自动生成，也可以手动修改；同名文章已存在时不会覆盖，并会提示可用的名称
+- 该页面只在 `npm run dev` 下可用，生产环境（`npm run start` / Docker）访问会返回 404
+
+**手动方式：**
 
 1. 复制 `content/articles/_template.md`（英文模板），重命名为英文短横线格式，例如 `monitor-no-signal.md`
    （以 `_` 开头的文件不会出现在知识库中，可用作模板或草稿）
@@ -184,6 +198,7 @@ docker run -d --name knowledge-base -p 3000:3000 \
 │   ├── [lang]/
 │   │   ├── layout.tsx                # 根布局：顶栏 + 左侧目录树 + 右侧内容（按语言设置 <html lang>）
 │   │   ├── page.tsx                  # 首页：搜索与最近更新列表
+│   │   ├── new/                      # 新建文章页面与 Server Actions（仅开发模式）
 │   │   └── articles/[slug]/page.tsx  # 文章详情页
 │   └── globals.css
 ├── middleware.ts                 # 语言路由：无前缀 → 英文，/zh → 中文
@@ -195,9 +210,13 @@ docker run -d --name knowledge-base -p 3000:3000 \
 │   ├── callout.tsx               # 警告框
 │   ├── markdown.tsx              # Markdown 渲染
 │   ├── language-switcher.tsx     # 中 / 英切换按钮
+│   ├── article-editor.tsx        # 新建文章表单与实时预览（客户端）
 │   └── article-card.tsx          # 分类标签、元信息与首页列表行
 ├── lib/
 │   ├── articles.ts               # 读取并解析 Markdown，生成目录树数据
+│   ├── new-article.ts            # 新建文章：slug、校验、frontmatter 生成
+│   ├── article-files.ts          # 新建文章：查重与写入（不覆盖）
+│   ├── editor-snippets.ts        # 正文工具栏片段
 │   ├── search-events.ts          # 侧栏与首页搜索之间的窗口事件
 │   ├── markdown-plugins.ts       # 警告框的 remark 插件
 │   ├── categories.ts             # 分类类型、色板与匹配规则
