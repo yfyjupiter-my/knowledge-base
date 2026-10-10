@@ -194,7 +194,7 @@ export function ArticleEditor({ lang, categories, today }: { lang: Locale; categ
 
       {state.formError && (
         <p role="alert" className="mt-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800 dark:border-rose-400/30 dark:bg-rose-400/10 dark:text-rose-200">
-          {state.formError === "disabled" ? d.errors.disabled : d.errors.writeFailed(state.detail ?? "")}
+          {state.formError === "writeFailed" ? d.errors.writeFailed(state.detail ?? "") : d.errors[state.formError]}
         </p>
       )}
 

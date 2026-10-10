@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import matter from "gray-matter";
-import { BODY_TEMPLATE, SLUG_RE, buildArticleMarkdown, formatLocalDate, slugify, suggestSlug, validateArticleInput, type ArticleInput } from "./new-article";
+import { BODY_TEMPLATE, SLUG_RE, buildArticleMarkdown, formatLocalDate, isLocalHost, slugify, suggestSlug, validateArticleInput, type ArticleInput } from "./new-article";
 
 describe("slugify", () => {
   it("转为小写并用短横线连接单词", () => {
@@ -225,4 +225,17 @@ describe("validateArticleInput", () => {
     const ok = validateArticleInput({ ...article(), tags: ["x", 1, null] }, ids);
     expect(ok.ok && ok.value.tags).toEqual(["x"]);
   });
+});
+
+describe("isLocalHost", () => {
+  it.each(["localhost:3000", "127.0.0.1:3000", "[::1]:3000", "localhost", "LOCALHOST:3200"])("本机地址 %j 允许", (host) => {
+    expect(isLocalHost(host)).toBe(true);
+  });
+
+  it.each([null, "", "192.168.1.20:3000", "evil.com:3000", "localhost.evil.com:3000", "127.0.0.1.evil.com", "localhost:abc"])(
+    "非本机地址 %j 拒绝",
+    (host) => {
+      expect(isLocalHost(host)).toBe(false);
+    },
+  );
 });

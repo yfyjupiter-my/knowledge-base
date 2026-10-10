@@ -1,19 +1,25 @@
 "use server";
 
+import { headers } from "next/headers";
 import { slugExists, writeNewArticle } from "@/lib/article-files";
 import { ARTICLES_DIR } from "@/lib/articles";
 import { getCategories } from "@/lib/categories.server";
 import { DEFAULT_LOCALE, isLocale, localePath } from "@/lib/i18n";
-import { SLUG_RE, buildArticleMarkdown, isAuthoringEnabled, suggestSlug, validateArticleInput, type FieldErrors } from "@/lib/new-article";
+import { SLUG_RE, buildArticleMarkdown, isAuthoringEnabled, isLocalHost, suggestSlug, validateArticleInput, type FieldErrors } from "@/lib/new-article";
 
 export type CreateArticleState = {
   fieldErrors?: FieldErrors;
-  formError?: "disabled" | "writeFailed";
+  formError?: "disabled" | "forbiddenHost" | "writeFailed";
   detail?: string;
   suggestion?: string;
   /** 成功时新文章的地址，由客户端整页跳转 */
   href?: string;
 };
+
+/** 只允许在本机通过 localhost / 127.0.0.1 / [::1] 访问时写入 */
+async function requestIsLocal(): Promise<boolean> {
+  return isLocalHost((await headers()).get("host"));
+}
 
 function suggestionFor(slug: string): string {
   return suggestSlug(slug, (s) => slugExists(ARTICLES_DIR, s));
@@ -25,6 +31,7 @@ function suggestionFor(slug: string): string {
  */
 export async function createArticle(lang: string, raw: unknown): Promise<CreateArticleState> {
   if (!isAuthoringEnabled()) return { formError: "disabled" };
+  if (!(await requestIsLocal())) return { formError: "forbiddenHost" };
   const result = validateArticleInput(raw, getCategories().map((c) => c.id));
   if (!result.ok) return { fieldErrors: result.fieldErrors };
 
@@ -39,7 +46,7 @@ export async function createArticle(lang: string, raw: unknown): Promise<CreateA
 
 /** 输入文件名时实时检查是否已被占用 */
 export async function checkSlug(slug: string): Promise<{ exists: boolean; suggestion?: string }> {
-  if (!isAuthoringEnabled() || typeof slug !== "string" || !SLUG_RE.test(slug)) return { exists: false };
+  if (!isAuthoringEnabled() || !(await requestIsLocal()) || typeof slug !== "string" || !SLUG_RE.test(slug)) return { exists: false };
   if (!slugExists(ARTICLES_DIR, slug)) return { exists: false };
   return { exists: true, suggestion: suggestionFor(slug) };
 }

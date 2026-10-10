@@ -11,6 +11,16 @@ export function isAuthoringEnabled(): boolean {
   return process.env.NODE_ENV === "development";
 }
 
+const LOCAL_HOST_RE = /^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/i;
+
+/**
+ * 写入只接受浏览器以本机地址访问的请求：浏览器无法伪造 Host，
+ * 可挡住 DNS rebinding（恶意网页把自己的域名解析到 127.0.0.1 后调用 Server Action）
+ */
+export function isLocalHost(host: string | null): boolean {
+  return host !== null && LOCAL_HOST_RE.test(host);
+}
+
 /** 标题 → 文件名；非英文字母数字的部分合并为短横线，纯中文标题返回空字符串 */
 export function slugify(title: string): string {
   return title
