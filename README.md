@@ -24,6 +24,8 @@ npm install
 npm run dev          # 启动开发服务器 http://localhost:3000
 ```
 
+开发服务器默认只监听本机（`localhost`），局域网中的其他设备无法访问，以免他人调用 `/new` 在本机创建文件。需要用手机等设备调试时，可临时运行 `npm run dev -- -H 0.0.0.0`。
+
 其他命令：
 
 ```bash

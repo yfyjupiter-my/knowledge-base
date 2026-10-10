@@ -4,7 +4,7 @@
   "private": true,
   "description": "轻量级公司内部知识库与故障排查系统",
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -H localhost",
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
