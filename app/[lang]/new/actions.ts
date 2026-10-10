@@ -9,7 +9,8 @@ import { SLUG_RE, buildArticleMarkdown, isAuthoringEnabled, isLocalHost, suggest
 
 export type CreateArticleState = {
   fieldErrors?: FieldErrors;
-  formError?: "disabled" | "forbiddenHost" | "writeFailed";
+  /** requestFailed 由客户端在请求本身失败时设置 */
+  formError?: "disabled" | "forbiddenHost" | "requestFailed" | "writeFailed";
   detail?: string;
   suggestion?: string;
   /** 成功时新文章的地址，由客户端整页跳转 */

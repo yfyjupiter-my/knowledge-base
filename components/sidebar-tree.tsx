@@ -7,6 +7,7 @@ import { ChevronRight, House, Search } from "lucide-react";
 import { getCategory, type Category, type CategoryId } from "@/lib/categories";
 import type { TreeArticle, TreeCategory } from "@/lib/articles";
 import { HTML_LANG, getDictionary, localePath, stripLocale, type Locale } from "@/lib/i18n";
+import { confirmLeave } from "@/lib/leave-guard";
 import { onCategoryChange, requestSearch, type CategoryFilter } from "@/lib/search-events";
 
 const COLLAPSED_KEY = "kb:tree-collapsed";
@@ -148,6 +149,7 @@ export function SidebarTree({ lang, tree, categories, shortcut, onNavigate }: Si
   function submitFilter() {
     const q = filter.trim();
     if (!q) return;
+    if (!isHome && !confirmLeave()) return;
     setFilter("");
     onNavigate?.();
     if (isHome) requestSearch({ q, c: "all" });

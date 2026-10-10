@@ -86,11 +86,11 @@ updated: <YYYY-MM-DD>
 
 ## 7. 保存流程（Server Action `createArticle`）
 
-1. `isAuthoringEnabled()` 为假 → 返回错误
+1. `isAuthoringEnabled()` 为假 → 返回错误；请求的 `Host` 不是 `localhost` / `127.0.0.1` / `[::1]`（可带端口）→ 返回错误（防止局域网调用与 DNS rebinding）
 2. 服务端重新校验第 5 节全部规则；分类 id 必须存在于 `getCategories()`
 3. 检查 slug 冲突：`<slug>.md` 或 `<slug>.zh.md` 任一存在即为冲突
 4. `buildArticleMarkdown()` 生成内容，以 `fs.writeFile(path, data, { flag: "wx" })` 写入 `ARTICLES_DIR/<slug>.md`；`EEXIST` 视为冲突
-5. 成功 → `redirect` 到当前语言的 `/articles/<slug>`
+5. 成功 → 返回当前语言的 `/articles/<slug>`，由客户端整页跳转（不用 `redirect()`：dev 模式下写入文件触发的重新编译会打断客户端路由跳转）
 
 slug 必须先通过正则校验才会参与路径拼接，因此不会写出 `_` 开头的文件，也不会跨目录写入。
 
@@ -103,9 +103,10 @@ slug 必须先通过正则校验才会参与路径拼接，因此不会写出 `_
 | 字段校验失败 | 对应字段下方显示错误，表单内容保留 |
 | slug 冲突 | slug 字段下方提示，并给出第一个可用的建议名（`<slug>-2`、`<slug>-3`…） |
 | 写入失败（权限、磁盘等） | 页面顶部显示错误信息，内容保留 |
-| 存在未保存内容时离开页面 | `beforeunload` 触发浏览器确认；提交成功后解除 |
+| 请求本身失败（dev server 重启或已停止） | 页面顶部提示重试，内容保留 |
+| 存在未保存内容时离开页面 | 关闭、刷新、后退：`beforeunload` 确认（顶栏入口为整页加载）；站内链接与侧栏搜索：经 `lib/leave-guard.ts` 确认；提交成功后解除 |
 
-Server Action 返回结构：`{ ok: false, fieldErrors?: Record<field, message>, formError?: string, suggestion?: string }`，成功时直接重定向。
+Server Action 返回结构：`{ fieldErrors?: Record<field, code>, formError?: "disabled" | "forbiddenHost" | "writeFailed", detail?: string, suggestion?: string, href?: string }`，成功时只含 `href`。
 
 ## 9. 模块划分
 

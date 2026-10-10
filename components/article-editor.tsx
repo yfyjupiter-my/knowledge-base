@@ -6,6 +6,7 @@ import { checkSlug, createArticle, type CreateArticleState } from "@/app/[lang]/
 import { Markdown } from "@/components/markdown";
 import { CALLOUT_KINDS, CODE_LANGUAGES, HEADING, STEP, calloutSnippet, codeSnippet, insertSnippet, type CalloutKind, type Snippet } from "@/lib/editor-snippets";
 import { getDictionary, type Locale } from "@/lib/i18n";
+import { confirmLeave, setLeaveGuard } from "@/lib/leave-guard";
 import { BODY_TEMPLATE, SLUG_RE, slugify, type ArticleField } from "@/lib/new-article";
 
 type CategoryOption = { id: string; label: string };
@@ -42,9 +43,15 @@ export function ArticleEditor({ lang, categories, today }: { lang: Locale; categ
 
   const dirty = title !== "" || summary !== "" || tags.length > 0 || tagDraft !== "" || body !== BODY_TEMPLATE;
 
-  // 关闭标签页或刷新：浏览器原生确认；站内链接（客户端路由不触发 beforeunload）：捕获点击后确认
+  // 关闭标签页、刷新、后退：浏览器原生确认（顶栏入口是整页加载，后退会离开文档）；
+  // 站内链接与侧栏搜索（客户端路由不触发 beforeunload）：经 leave-guard 确认
   useEffect(() => {
     if (!dirty) return;
+    const confirm = () => {
+      if (!window.confirm(d.leaveConfirm)) return false;
+      leaving.current = true;
+      return true;
+    };
     const onBeforeUnload = (e: BeforeUnloadEvent) => {
       if (leaving.current) return;
       e.preventDefault();
@@ -53,16 +60,16 @@ export function ArticleEditor({ lang, categories, today }: { lang: Locale; categ
     const onClick = (e: MouseEvent) => {
       const link = (e.target as Element | null)?.closest?.("a[href]");
       if (!link || link.getAttribute("target") === "_blank" || link.hasAttribute("download")) return;
-      if (window.confirm(d.leaveConfirm)) {
-        leaving.current = true;
-      } else {
+      if (!confirmLeave()) {
         e.preventDefault();
         e.stopPropagation();
       }
     };
+    setLeaveGuard(confirm);
     window.addEventListener("beforeunload", onBeforeUnload);
     document.addEventListener("click", onClick, true);
     return () => {
+      setLeaveGuard(null);
       window.removeEventListener("beforeunload", onBeforeUnload);
       document.removeEventListener("click", onClick, true);
     };
@@ -168,7 +175,14 @@ export function ArticleEditor({ lang, categories, today }: { lang: Locale; categ
       setTagDraft("");
     }
     startTransition(async () => {
-      const result = await createArticle(lang, { title, slug, summary, category, tags: allTags, updated, body });
+      let result: CreateArticleState;
+      try {
+        result = await createArticle(lang, { title, slug, summary, category, tags: allTags, updated, body });
+      } catch {
+        // dev server 重启或已停止时请求会失败：保留表单内容，提示重试
+        setState({ formError: "requestFailed" });
+        return;
+      }
       if (result.href) {
         // 整页跳转：不受 dev 重新编译影响，并让左侧目录包含新文章
         leaving.current = true;
