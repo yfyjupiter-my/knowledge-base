@@ -134,6 +134,17 @@ describe("buildArticleMarkdown", () => {
     "?question",
     "back\slash",
     "中文标题：冒号",
+    "12:30",
+    "1:30",
+    "190:20:30",
+    "1_000",
+    "0x1F",
+    "0o17",
+    "1e3",
+    "+12",
+    ".5",
+    "yes",
+    "~",
   ];
 
   it.each(tricky)("title/summary 含特殊值 %j 时读回一致", (value) => {

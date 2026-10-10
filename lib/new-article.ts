@@ -51,13 +51,20 @@ function parsesTo(source: string, expected: unknown): boolean {
   }
 }
 
-/** 原样写入能被 YAML 读回同一字符串时不加引号，否则用双引号（JSON 字符串即合法的 YAML 双引号标量） */
+/**
+ * 可以不加引号的值：以字母或数字开头，只含字母、数字、空格和少数安全标点。
+ * 站点用 gray-matter 自带的旧版 js-yaml（YAML 1.1）解析，它会把 12:30、1_000 读成数字，
+ * 因此冒号、下划线等一律加引号，而不是只信任本项目的 js-yaml 4。
+ */
+const SAFE_PLAIN_RE = /^[\p{L}\p{N}][\p{L}\p{N} .()/'&+-]*$/u;
+
+/** 安全且能被 YAML 读回同一字符串时不加引号，否则用双引号（JSON 字符串即合法的 YAML 双引号标量） */
 function scalar(value: string): string {
-  return value !== "" && parsesTo(`k: ${value}`, { k: value }) ? value : JSON.stringify(value);
+  return SAFE_PLAIN_RE.test(value) && parsesTo(`k: ${value}`, { k: value }) ? value : JSON.stringify(value);
 }
 
 function flowItem(value: string): string {
-  return value !== "" && parsesTo(`[${value}]`, [value]) ? value : JSON.stringify(value);
+  return SAFE_PLAIN_RE.test(value) && parsesTo(`[${value}]`, [value]) ? value : JSON.stringify(value);
 }
 
 /** 生成文章全文；字段顺序与现有文章一致 */
