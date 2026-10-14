@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
-import { slugExists, writeImage, writeNewArticle } from "@/lib/article-files";
+import { overwriteArticle, slugExists, writeImage, writeNewArticle } from "@/lib/article-files";
 import { ARTICLES_DIR, IMAGES_DIR } from "@/lib/articles";
 import { getCategories } from "@/lib/categories.server";
 import { DEFAULT_LOCALE, isLocale, localePath } from "@/lib/i18n";
@@ -12,7 +12,7 @@ import { SLUG_RE, buildArticleMarkdown, isAuthoringEnabled, isLocalHost, suggest
 export type CreateArticleState = {
   fieldErrors?: FieldErrors;
   /** requestFailed 由客户端在请求本身失败时设置 */
-  formError?: "disabled" | "forbiddenHost" | "requestFailed" | "writeFailed";
+  formError?: "disabled" | "forbiddenHost" | "requestFailed" | "writeFailed" | "conflict" | "notFound";
   detail?: string;
   suggestion?: string;
   /** 成功时新文章的地址，由客户端整页跳转 */
@@ -47,6 +47,29 @@ export async function createArticle(lang: string, raw: unknown): Promise<CreateA
   // 生产模式（Docker）下首页、侧栏与搜索索引有 60 秒缓存，立即刷新以包含新文章
   revalidatePath("/[lang]", "layout");
   return { href: localePath(isLocale(lang) ? lang : DEFAULT_LOCALE, `/articles/${value.slug}`) };
+}
+
+/**
+ * 保存对已有文章某一语言版本的修改。slug 与语言由编辑页决定，忽略表单里的 slug；
+ * hash 是打开编辑页时文件内容的指纹，文件在此期间被改过则拒绝覆盖。
+ */
+export async function updateArticle(lang: string, target: { slug: string; locale: string; hash: string }, raw: unknown): Promise<CreateArticleState> {
+  if (!isAuthoringEnabled()) return { formError: "disabled" };
+  if (!(await requestIsLocal())) return { formError: "forbiddenHost" };
+  // 来自客户端的数据不可信
+  const { slug, locale, hash } = (target ?? {}) as Partial<Record<"slug" | "locale" | "hash", unknown>>;
+  if (typeof slug !== "string" || !SLUG_RE.test(slug) || !isLocale(locale) || typeof hash !== "string") return { formError: "notFound" };
+  const input = raw && typeof raw === "object" ? { ...raw, slug } : { slug };
+  const result = validateArticleInput(input, getCategories().map((c) => c.id));
+  if (!result.ok) return { fieldErrors: result.fieldErrors };
+
+  const written = await overwriteArticle(ARTICLES_DIR, slug, locale, buildArticleMarkdown(result.value), hash);
+  if (!written.ok) {
+    if (written.reason === "failed") return { formError: "writeFailed", detail: written.message };
+    return { formError: written.reason };
+  }
+  revalidatePath("/[lang]", "layout");
+  return { href: localePath(isLocale(lang) ? lang : DEFAULT_LOCALE, `/articles/${slug}`) };
 }
 
 /** 输入文件名时实时检查是否已被占用 */

@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronRight, Languages } from "lucide-react";
+import { ChevronRight, Languages, SquarePen } from "lucide-react";
 import { getAllArticles, getArticle } from "@/lib/articles";
 import { getCategory } from "@/lib/categories";
 import { getCategories } from "@/lib/categories.server";
 import { HTML_LANG, LOCALES, getDictionary, isLocale, localePath, type Locale } from "@/lib/i18n";
 import { ArticleMetaRow, CategoryBadge } from "@/components/article-card";
 import { Markdown } from "@/components/markdown";
+import { isAuthoringEnabled } from "@/lib/new-article";
 
 export const revalidate = 60;
 
@@ -73,7 +74,20 @@ export default async function ArticlePage({ params }: Props) {
       )}
 
       <header className="mt-5 border-b border-slate-200 pb-6 dark:border-slate-800" lang={HTML_LANG[contentLang]}>
-        <CategoryBadge category={category} lang={lang} />
+        <div className="flex items-center justify-between gap-3">
+          <CategoryBadge category={category} lang={lang} />
+          {isAuthoringEnabled() && (
+            // 普通 <a> 整页加载，与顶栏的新建入口一致
+            <a
+              href={localePath(lang, `/admin/edit/${encodeURIComponent(article.slug)}`)}
+              lang={HTML_LANG[lang]}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-300 px-2.5 py-1 text-sm text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+            >
+              <SquarePen className="size-4" aria-hidden />
+              {d.article.edit}
+            </a>
+          )}
+        </div>
         <h1 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">{article.title}</h1>
         {article.summary && <p className="mt-3 text-slate-600 dark:text-slate-400">{article.summary}</p>}
         <ArticleMetaRow article={article} lang={lang} className="mt-4" />
