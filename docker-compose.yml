@@ -8,9 +8,9 @@ services:
     image: knowledge-base:latest
     container_name: knowledge-base
     ports:
-      # 宿主机端口默认 3200，可通过环境变量覆盖：KB_PORT=8080 docker compose up -d
+      # 宿主机端口默认 3199，可通过环境变量覆盖：KB_PORT=8080 docker compose up -d
       # 只绑定本机回环地址：/admin 可写文件，不能让局域网访问（Host 头可被伪造）
-      - "127.0.0.1:${KB_PORT:-3200}:3000"
+      - "127.0.0.1:${KB_PORT:-3199}:3000"
     restart: unless-stopped
     volumes:
       # 挂载本地 content 目录（文章 + 分类配置）：修改后约 60 秒内生效，无需重新构建镜像
@@ -20,3 +20,20 @@ services:
     environment:
       - NODE_ENV=production
       - KB_AUTHORING=1
+
+  # 局域网只读实例：其他机器访问 http://192.168.100.64:3200
+  # 不开启 KB_AUTHORING（/admin 为 404），content 只读挂载；本机在 3199 保存的文章约 60 秒后在此生效
+  knowledge-base-lan:
+    build:
+      context: .
+    # 与写入版镜像区分：顶栏按钮与 /admin 在构建时决定，共用镜像名会互相覆盖
+    image: knowledge-base:readonly
+    container_name: knowledge-base-lan
+    ports:
+      # 默认监听所有网卡，端口可通过 KB_LAN_PORT 覆盖；只想暴露在指定网卡上可写成 "192.168.100.64:3200:3000"
+      - "${KB_LAN_PORT:-3200}:3000"
+    restart: unless-stopped
+    volumes:
+      - ./content:/app/content:ro
+    environment:
+      - NODE_ENV=production
