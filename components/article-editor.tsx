@@ -2,19 +2,21 @@
 
 import { useEffect, useRef, useState, useTransition, type DragEvent, type KeyboardEvent } from "react";
 import { Code, Heading2, ImagePlus, Info, ListChecks, X } from "lucide-react";
-import { checkSlug, createArticle, uploadImage, type CreateArticleState, type UploadImageResult } from "@/app/[lang]/admin/actions";
+import { checkSlug, createArticle, updateArticle, uploadImage, type CreateArticleState, type UploadImageResult } from "@/app/[lang]/admin/actions";
 import { Markdown } from "@/components/markdown";
 import { CALLOUT_KINDS, CODE_LANGUAGES, HEADING, STEP, calloutSnippet, codeSnippet, insertSnippet, type CalloutKind, type Snippet } from "@/lib/editor-snippets";
-import { getDictionary, type Locale } from "@/lib/i18n";
+import { HTML_LANG, getDictionary, type Locale } from "@/lib/i18n";
 import { MAX_IMAGE_BYTES, altFromFileName, imageMarkdown } from "@/lib/images";
 import { createHistory, record, redo, transformAll, undo, type History } from "@/lib/undo-history";
 import { confirmLeave, setLeaveGuard } from "@/lib/leave-guard";
-import { BODY_TEMPLATE, SLUG_RE, slugify, type ArticleField } from "@/lib/new-article";
+import { BODY_TEMPLATE, SLUG_RE, slugify, type ArticleField, type ArticleInput } from "@/lib/new-article";
 
 /** 两次输入间隔小于该值时合并为同一步撤销 */
 const TYPING_MERGE_MS = 1000;
 
 type CategoryOption = { id: string; label: string };
+/** 编辑已有文章时传入：要覆盖的语言版本、打开时的文件指纹与原有字段 */
+export type EditTarget = { slug: string; locale: Locale; file: string; hash: string; values: Omit<ArticleInput, "slug"> };
 /** requestFailed 由客户端在请求本身失败时设置 */
 type UploadResult = UploadImageResult | { error: "requestFailed" };
 
@@ -37,17 +39,23 @@ function splitTags(raw: string): string[] {
   return raw.split(/[,，]/).map((t) => t.trim()).filter(Boolean);
 }
 
-export function ArticleEditor({ lang, categories, today }: { lang: Locale; categories: CategoryOption[]; today: string }) {
+export function ArticleEditor({ lang, categories, today, edit }: { lang: Locale; categories: CategoryOption[]; today: string; edit?: EditTarget }) {
   const d = getDictionary(lang).editor;
-  const [title, setTitle] = useState("");
-  const [slug, setSlug] = useState("");
-  const [slugEdited, setSlugEdited] = useState(false);
-  const [summary, setSummary] = useState("");
-  const [category, setCategory] = useState("");
-  const [tags, setTags] = useState<string[]>([]);
+  // 固定为打开页面时的值：dev 模式下文件变化会刷新服务端 props，若跟着换成新指纹，
+  // 表单里的旧内容就会覆盖他人的修改
+  const [initial] = useState(() => edit?.values ?? { title: "", summary: "", category: "", tags: [] as string[], updated: today, body: BODY_TEMPLATE });
+  const [baseHash] = useState(edit?.hash);
+  const [title, setTitle] = useState(initial.title);
+  const [slug, setSlug] = useState(edit?.slug ?? "");
+  // 编辑时文件名固定，标题变化不再自动生成
+  const [slugEdited, setSlugEdited] = useState(edit !== undefined);
+  const [summary, setSummary] = useState(initial.summary);
+  const [category, setCategory] = useState(initial.category);
+  const [tags, setTags] = useState<string[]>(initial.tags);
   const [tagDraft, setTagDraft] = useState("");
+  // 编辑时也默认填今天：保存即视为更新
   const [updated, setUpdated] = useState(today);
-  const [body, setBody] = useState(BODY_TEMPLATE);
+  const [body, setBody] = useState(initial.body);
   const [tab, setTab] = useState<"edit" | "preview">("edit");
   const [state, setState] = useState<CreateArticleState>({});
   const [taken, setTaken] = useState<{ suggestion?: string } | null>(null);
@@ -57,13 +65,19 @@ export function ArticleEditor({ lang, categories, today }: { lang: Locale; categ
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadSeq = useRef(0);
-  const history = useRef<History>(createHistory(BODY_TEMPLATE));
+  const history = useRef<History>(createHistory(initial.body));
   // 上一次打字的时间；程序化修改、撤销、重做后清零，下一次打字另起一步
   const lastTypedAt = useRef(0);
   // 用户已确认离开或文章已创建，随后的整页跳转不再弹出 beforeunload
   const leaving = useRef(false);
 
-  const dirty = title !== "" || summary !== "" || tags.length > 0 || tagDraft !== "" || body !== BODY_TEMPLATE;
+  const dirty =
+    title !== initial.title ||
+    summary !== initial.summary ||
+    category !== initial.category ||
+    tags.join("\n") !== initial.tags.join("\n") ||
+    tagDraft !== "" ||
+    body !== initial.body;
 
   // 关闭标签页、刷新、后退：浏览器原生确认（顶栏入口是整页加载，后退会离开文档）；
   // 站内链接与侧栏搜索（客户端路由不触发 beforeunload）：经 leave-guard 确认
@@ -100,7 +114,7 @@ export function ArticleEditor({ lang, categories, today }: { lang: Locale; categ
   // 文件名实时查重（300ms 防抖）
   useEffect(() => {
     setTaken(null);
-    if (!SLUG_RE.test(slug)) return;
+    if (edit || !SLUG_RE.test(slug)) return;
     let cancelled = false;
     const timer = setTimeout(async () => {
       try {
@@ -114,7 +128,7 @@ export function ArticleEditor({ lang, categories, today }: { lang: Locale; categ
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [slug]);
+  }, [slug, edit]);
 
   function clearError(field: ArticleField) {
     setState((s) => (s.fieldErrors?.[field] ? { ...s, fieldErrors: { ...s.fieldErrors, [field]: undefined } } : s));
@@ -312,14 +326,15 @@ export function ArticleEditor({ lang, categories, today }: { lang: Locale; categ
     startTransition(async () => {
       let result: CreateArticleState;
       try {
-        result = await createArticle(lang, { title, slug, summary, category, tags: allTags, updated, body });
+        const input = { title, slug, summary, category, tags: allTags, updated, body };
+        result = edit ? await updateArticle(lang, { slug: edit.slug, locale: edit.locale, hash: baseHash ?? edit.hash }, input) : await createArticle(lang, input);
       } catch {
         // dev server 重启或已停止时请求会失败：保留表单内容，提示重试
         setState({ formError: "requestFailed" });
         return;
       }
       if (result.href) {
-        // 整页跳转：不受 dev 重新编译影响，并让左侧目录包含新文章
+        // 整页跳转：不受 dev 重新编译影响，并让左侧目录包含新文章或新标题
         leaving.current = true;
         window.location.assign(result.href);
         return;
@@ -338,8 +353,8 @@ export function ArticleEditor({ lang, categories, today }: { lang: Locale; categ
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-8 sm:py-10 lg:px-10">
-      <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{d.title}</h1>
-      <p className="mt-2 text-sm text-slate-500">{d.intro}</p>
+      <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{edit ? d.editTitle : d.title}</h1>
+      <p className="mt-2 text-sm text-slate-500">{edit ? d.editIntro(edit.file) : d.intro}</p>
 
       {state.formError && (
         <p role="alert" className="mt-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800 dark:border-rose-400/30 dark:bg-rose-400/10 dark:text-rose-200">
@@ -357,14 +372,14 @@ export function ArticleEditor({ lang, categories, today }: { lang: Locale; categ
       >
         <div className="grid gap-4 md:grid-cols-2">
           <Field label={d.fields.title} htmlFor="title" error={errorFor("title")}>
-            <input id="title" className={inputClass} value={title} placeholder={d.placeholders.title} onChange={(e) => onTitleChange(e.target.value)} autoFocus />
+            <input id="title" className={inputClass} value={title} placeholder={d.placeholders.title} onChange={(e) => onTitleChange(e.target.value)} autoFocus={!edit} />
           </Field>
 
           <Field
             label={d.fields.slug}
             htmlFor="slug"
             error={slugError}
-            hint={title && !slug ? d.hints.slugManual : d.hints.slug(slug)}
+            hint={edit ? d.editSlugHint : title && !slug ? d.hints.slugManual : d.hints.slug(slug)}
             extra={
               slugError && suggestion ? (
                 <span className="text-xs text-slate-500">
@@ -376,7 +391,15 @@ export function ArticleEditor({ lang, categories, today }: { lang: Locale; categ
               ) : null
             }
           >
-            <input id="slug" className={`${inputClass} font-mono`} value={slug} onChange={(e) => onSlugChange(e.target.value)} spellCheck={false} autoCapitalize="off" />
+            <input
+              id="slug"
+              className={`${inputClass} font-mono ${edit ? "cursor-not-allowed bg-slate-50 text-slate-500 dark:bg-slate-800/50" : ""}`}
+              value={slug}
+              readOnly={edit !== undefined}
+              onChange={(e) => onSlugChange(e.target.value)}
+              spellCheck={false}
+              autoCapitalize="off"
+            />
           </Field>
 
           <Field label={d.fields.summary} htmlFor="summary" error={errorFor("summary")} hint={d.hints.summary(summary.length)} className="md:col-span-2">
@@ -560,7 +583,7 @@ export function ArticleEditor({ lang, categories, today }: { lang: Locale; categ
               <p className="text-sm font-medium">{d.tabs.preview}</p>
               <div className="mt-2 h-[60vh] overflow-y-auto rounded-lg border border-slate-200 bg-white p-4 lg:mt-[2.375rem] dark:border-slate-800 dark:bg-slate-950">
                 {body.trim() ? (
-                  <article lang="en" className={proseClass}>
+                  <article lang={edit ? HTML_LANG[edit.locale] : "en"} className={proseClass}>
                     <Markdown content={body} lang={lang} />
                   </article>
                 ) : (
@@ -577,7 +600,7 @@ export function ArticleEditor({ lang, categories, today }: { lang: Locale; categ
             disabled={pending || uploading > 0}
             className="rounded-lg bg-sky-600 px-5 py-2 text-sm font-medium text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {pending ? d.submitting : uploading > 0 ? d.uploading : d.submit}
+            {pending ? (edit ? d.saving : d.submitting) : uploading > 0 ? d.uploading : edit ? d.save : d.submit}
           </button>
         </div>
       </form>

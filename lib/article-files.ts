@@ -1,14 +1,20 @@
 import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { DEFAULT_LOCALE, LOCALES } from "./i18n";
+import matter from "gray-matter";
+import { DEFAULT_LOCALE, LOCALES, type Locale } from "./i18n";
 import { IMAGE_FILE_RE, detectImageType } from "./images";
-import { SLUG_RE } from "./new-article";
+import { SLUG_RE, type ArticleInput } from "./new-article";
 
-/** 同一 slug 各语言版本的文件名：vpn.md（默认语言）、vpn.zh.md */
+/** 某一语言版本的文件名：vpn.md（默认语言）、vpn.zh.md */
+export function articleFileName(slug: string, locale: Locale): string {
+  return locale === DEFAULT_LOCALE ? `${slug}.md` : `${slug}.${locale}.md`;
+}
+
+/** 同一 slug 各语言版本的文件名 */
 function fileNames(slug: string): string[] {
-  return LOCALES.map((l) => (l === DEFAULT_LOCALE ? `${slug}.md` : `${slug}.${l}.md`));
+  return LOCALES.map((l) => articleFileName(slug, l));
 }
 
 export function slugExists(dir: string, slug: string): boolean {
@@ -27,6 +33,60 @@ export async function writeNewArticle(dir: string, slug: string, content: string
   } catch (e) {
     const err = e as NodeJS.ErrnoException;
     if (err.code === "EEXIST") return { ok: false, reason: "exists" };
+    return { ok: false, reason: "failed", message: err.message };
+  }
+}
+
+/** 文件内容的指纹：编辑页打开时记录，保存时比对，防止覆盖期间被他人改过的文件 */
+export function contentHash(raw: string): string {
+  return createHash("sha256").update(raw, "utf8").digest("hex");
+}
+
+/** 读取某一语言版本的原文；不存在时返回 null */
+export async function readArticleFile(dir: string, slug: string, locale: Locale): Promise<{ raw: string; hash: string } | null> {
+  if (!SLUG_RE.test(slug)) return null;
+  try {
+    const raw = await readFile(path.join(dir, articleFileName(slug, locale)), "utf8");
+    return { raw, hash: contentHash(raw) };
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code === "ENOENT") return null;
+    throw e;
+  }
+}
+
+/** 把文章原文拆回表单字段（slug 由文件名决定，不在其中） */
+export function parseArticleMarkdown(raw: string): Omit<ArticleInput, "slug"> {
+  const { data, content } = matter(raw);
+  const text = (v: unknown) => (typeof v === "string" ? v.trim() : "");
+  // YAML 会把未加引号的 2026-01-01 解析成 UTC 零点的 Date
+  const updated = data.updated instanceof Date && !Number.isNaN(data.updated.getTime()) ? data.updated.toISOString().slice(0, 10) : text(data.updated);
+  return {
+    title: text(data.title),
+    summary: text(data.summary),
+    category: text(data.category),
+    tags: Array.isArray(data.tags) ? data.tags.map(String) : [],
+    updated,
+    body: content.replace(/\r\n?/g, "\n").replace(/^\n+/, ""),
+  };
+}
+
+export type OverwriteResult =
+  | { ok: true }
+  | { ok: false; reason: "notFound" | "conflict" }
+  | { ok: false; reason: "failed"; message: string };
+
+/** 覆盖已有的语言版本；文件内容与 expectedHash 不一致时拒绝写入 */
+export async function overwriteArticle(dir: string, slug: string, locale: Locale, content: string, expectedHash: string): Promise<OverwriteResult> {
+  if (!SLUG_RE.test(slug)) throw new Error(`invalid slug: ${slug}`);
+  const file = path.join(dir, articleFileName(slug, locale));
+  try {
+    const current = await readFile(file, "utf8");
+    if (contentHash(current) !== expectedHash) return { ok: false, reason: "conflict" };
+    await writeFile(file, content, "utf8");
+    return { ok: true };
+  } catch (e) {
+    const err = e as NodeJS.ErrnoException;
+    if (err.code === "ENOENT") return { ok: false, reason: "notFound" };
     return { ok: false, reason: "failed", message: err.message };
   }
 }
