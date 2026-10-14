@@ -89,9 +89,10 @@ export function SearchExperience({ lang, docs, categories }: { lang: Locale; doc
   // 从 URL 恢复状态（?q=&c=），便于分享搜索结果
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    setQuery(params.get("q") ?? "");
+    const q = params.get("q") ?? "";
+    setQuery(q);
     const c = params.get("c");
-    if (c && categories.some((x) => x.id === c)) setCategory(c);
+    if (!q && c && categories.some((x) => x.id === c)) setCategory(c);
   }, [categories]);
 
   // 已在首页时，侧栏通过事件切换分类或提交搜索
@@ -136,7 +137,8 @@ export function SearchExperience({ lang, docs, categories }: { lang: Locale; doc
     } else {
       list = docs.map((item, refIndex) => ({ item, refIndex, matches: [] }));
     }
-    if (category !== "all") list = list.filter((r) => r.item.category === category);
+    // 有关键词时全局搜索；分类筛选只用于浏览
+    if (!deferredQuery && category !== "all") list = list.filter((r) => r.item.category === category);
     return { results: list, elapsed: performance.now() - start };
   }, [fuse, docs, deferredQuery, category]);
 
@@ -166,7 +168,11 @@ export function SearchExperience({ lang, docs, categories }: { lang: Locale; doc
             ref={inputRef}
             type="search"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              // 与侧栏搜索一致：输入关键词即切回“全部”
+              if (e.target.value.trim() && category !== "all") setCategory("all");
+            }}
             onKeyDown={(e) => e.key === "Escape" && setQuery("")}
             placeholder={t.placeholder}
             aria-label={t.aria}
@@ -192,7 +198,10 @@ export function SearchExperience({ lang, docs, categories }: { lang: Locale; doc
             <FilterChip
               key={c.id}
               active={category === c.id}
-              onClick={() => setCategory(category === c.id ? "all" : c.id)}
+              onClick={() => {
+                setQuery("");
+                setCategory(category === c.id ? "all" : c.id);
+              }}
               label={c.label[lang]}
               count={counts.get(c.id) ?? 0}
               dotClass={c.dotClass}
