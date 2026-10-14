@@ -24,12 +24,15 @@ npm install
 npm run dev          # 启动开发服务器 http://localhost:3000
 ```
 
+开发服务器默认只监听本机（`localhost`），局域网中的其他设备无法访问，以免他人调用 `/admin` 在本机创建文件。需要用手机等设备调试时，可临时运行 `npm run dev -- -H 0.0.0.0`。
+
 其他命令：
 
 ```bash
 npm run build        # 生产构建
 npm run start        # 运行生产构建
 npm run typecheck    # TypeScript 类型检查
+npm test             # 运行单元测试（Vitest）
 ```
 
 ## 2. 新建或修改文章
@@ -41,6 +44,22 @@ content/articles/vpn-connection.md  →  /articles/vpn-connection
 ```
 
 ### 新建文章
+
+**推荐：使用图形界面（仅本机）**
+
+```bash
+docker compose up -d --build   # 之后访问 http://localhost:3200/admin
+# 或者开发模式：npm run dev，访问 http://localhost:3000/admin
+```
+
+打开 `/admin`（或点击顶栏的 **New article**），填写标题、摘要、分类、标签和正文，右侧会实时预览。点击 **Create** 后自动生成 `content/articles/<文件名>.md`，并跳转到新文章页面，确认无误后用 Git 提交即可。
+
+- 文件名根据标题自动生成，也可以手动修改；同名文章已存在时不会覆盖，并会提示可用的名称
+- 该页面只在 `npm run dev` 或设置了 `KB_AUTHORING=1` 时可用，否则访问返回 404
+- 仓库自带的 `docker-compose.yml` 面向本机使用：已开启 `KB_AUTHORING`、以可写方式挂载 `./content`，并且端口只绑定 `127.0.0.1`。部署到他人可访问的服务器时，请删除其中的 `KB_AUTHORING` 并恢复 `:ro` 挂载
+- 无论哪种方式，写入请求都只接受以 `localhost` / `127.0.0.1` 访问的页面
+
+**手动方式：**
 
 1. 复制 `content/articles/_template.md`（英文模板），重命名为英文短横线格式，例如 `monitor-no-signal.md`
    （以 `_` 开头的文件不会出现在知识库中，可用作模板或草稿）
@@ -143,7 +162,7 @@ content/articles/vpn-connection.zh.md   →  /zh/articles/vpn-connection   （�
 docker compose up -d --build   # 构建镜像并在后台启动
 ```
 
-访问 http://localhost:3200。常用命令：
+访问 http://localhost:3200（新建文章：http://localhost:3200/admin）。常用命令：
 
 ```bash
 docker compose logs -f         # 查看日志
@@ -157,7 +176,7 @@ git pull && docker compose up -d --build   # 更新代码后重新部署
 KB_PORT=8080 docker compose up -d
 ```
 
-`docker-compose.yml` 默认以只读方式将 `./content` 挂载进容器，因此在服务器上 `git pull` 更新文章或分类后，无需重建镜像即可生效。
+`docker-compose.yml` 默认将 `./content` 挂载进容器（可写，供 `/admin` 保存新文章），因此 `git pull` 更新文章或分类后，无需重建镜像即可生效。端口默认只绑定本机 `127.0.0.1`，如需让局域网访问，请先按上文关闭 `KB_AUTHORING`，再把端口改回 `"${KB_PORT:-3200}:3000"`。
 
 ### 直接使用 Docker
 
@@ -184,6 +203,7 @@ docker run -d --name knowledge-base -p 3000:3000 \
 │   ├── [lang]/
 │   │   ├── layout.tsx                # 根布局：顶栏 + 左侧目录树 + 右侧内容（按语言设置 <html lang>）
 │   │   ├── page.tsx                  # 首页：搜索与最近更新列表
+│   │   ├── admin/                    # 新建文章页面与 Server Actions（开发模式或 KB_AUTHORING=1）
 │   │   └── articles/[slug]/page.tsx  # 文章详情页
 │   └── globals.css
 ├── middleware.ts                 # 语言路由：无前缀 → 英文，/zh → 中文
@@ -195,9 +215,13 @@ docker run -d --name knowledge-base -p 3000:3000 \
 │   ├── callout.tsx               # 警告框
 │   ├── markdown.tsx              # Markdown 渲染
 │   ├── language-switcher.tsx     # 中 / 英切换按钮
+│   ├── article-editor.tsx        # 新建文章表单与实时预览（客户端）
 │   └── article-card.tsx          # 分类标签、元信息与首页列表行
 ├── lib/
 │   ├── articles.ts               # 读取并解析 Markdown，生成目录树数据
+│   ├── new-article.ts            # 新建文章：slug、校验、frontmatter 生成
+│   ├── article-files.ts          # 新建文章：查重与写入（不覆盖）
+│   ├── editor-snippets.ts        # 正文工具栏片段
 │   ├── search-events.ts          # 侧栏与首页搜索之间的窗口事件
 │   ├── markdown-plugins.ts       # 警告框的 remark 插件
 │   ├── categories.ts             # 分类类型、色板与匹配规则

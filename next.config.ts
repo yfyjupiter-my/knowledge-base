@@ -11,6 +11,8 @@ const nextConfig: NextConfig = {
     "/**": ["./content/**/*"],
   },
   eslint: { ignoreDuringBuilds: true },
+  // /admin 上传图片走 Server Action，默认 1 MB 不够（图片上限 5 MB，见 lib/images.ts）
+  experimental: { serverActions: { bodySizeLimit: "6mb" } },
   poweredByHeader: false,
 };
 

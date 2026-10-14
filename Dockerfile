@@ -12,6 +12,9 @@ RUN npm ci --no-audit --no-fund
 FROM node:22-alpine AS builder
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
+# 设为 1 时开放 /admin 新建文章（顶栏按钮在构建时决定是否显示）
+ARG KB_AUTHORING
+ENV KB_AUTHORING=$KB_AUTHORING
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build
@@ -19,11 +22,13 @@ RUN npm run build
 # ---------- 3. 运行（仅包含 standalone 产物） ----------
 FROM node:22-alpine AS runner
 WORKDIR /app
+ARG KB_AUTHORING
 
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
     PORT=3000 \
-    HOSTNAME=0.0.0.0
+    HOSTNAME=0.0.0.0 \
+    KB_AUTHORING=$KB_AUTHORING
 
 # 使用非 root 用户运行
 RUN addgroup -S -g 1001 nodejs && adduser -S -u 1001 -G nodejs nextjs

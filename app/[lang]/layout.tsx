@@ -1,13 +1,14 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { LifeBuoy } from "lucide-react";
+import { LifeBuoy, SquarePen } from "lucide-react";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { MobileNav } from "@/components/mobile-nav";
 import { SidebarTree } from "@/components/sidebar-tree";
 import { getArticleTree } from "@/lib/articles";
 import { getCategories } from "@/lib/categories.server";
 import { HTML_LANG, LOCALES, getDictionary, isLocale, localePath } from "@/lib/i18n";
+import { isAuthoringEnabled } from "@/lib/new-article";
 import "highlight.js/styles/github-dark.css";
 import "../globals.css";
 
@@ -58,6 +59,16 @@ export default async function RootLayout({ children, params }: Props) {
               <span className="hidden text-sm text-slate-500 md:block">
                 {d.site.supportPrefix} {d.site.supportLabel} · {d.site.supportContact}
               </span>
+              {isAuthoringEnabled() && (
+                // 普通 <a> 整页加载：从 /admin 后退时会离开文档并触发 beforeunload 确认
+                <a
+                  href={localePath(lang, "/admin")}
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-sky-600 px-2.5 py-1.5 text-sm text-white transition hover:bg-sky-700"
+                >
+                  <SquarePen className="size-4" aria-hidden />
+                  <span className="hidden sm:inline">{d.editor.navButton}</span>
+                </a>
+              )}
               <LanguageSwitcher lang={lang} />
             </div>
           </div>

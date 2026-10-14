@@ -8,6 +8,8 @@ import { getCategories } from "./categories.server";
 import { DEFAULT_LOCALE, LOCALES, type Locale } from "./i18n";
 
 export const ARTICLES_DIR = path.join(process.cwd(), "content", "articles");
+/** /admin 上传的图片，经 /media/<文件名> 对外提供 */
+export const IMAGES_DIR = path.join(process.cwd(), "content", "images");
 
 export interface ArticleMeta {
   slug: string;
