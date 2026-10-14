@@ -39,7 +39,20 @@ function splitTags(raw: string): string[] {
   return raw.split(/[,，]/).map((t) => t.trim()).filter(Boolean);
 }
 
-export function ArticleEditor({ lang, categories, today, edit }: { lang: Locale; categories: CategoryOption[]; today: string; edit?: EditTarget }) {
+export function ArticleEditor({
+  lang,
+  categories,
+  today,
+  edit,
+  aside,
+}: {
+  lang: Locale;
+  categories: CategoryOption[];
+  today: string;
+  edit?: EditTarget;
+  /** 显示在说明文字下方，/admin 用来列出可编辑的已有文章 */
+  aside?: React.ReactNode;
+}) {
   const d = getDictionary(lang).editor;
   // 固定为打开页面时的值：dev 模式下文件变化会刷新服务端 props，若跟着换成新指纹，
   // 表单里的旧内容就会覆盖他人的修改
@@ -355,6 +368,7 @@ export function ArticleEditor({ lang, categories, today, edit }: { lang: Locale;
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-8 sm:py-10 lg:px-10">
       <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{edit ? d.editTitle : d.title}</h1>
       <p className="mt-2 text-sm text-slate-500">{edit ? d.editIntro(edit.file) : d.intro}</p>
+      {aside}
 
       {state.formError && (
         <p role="alert" className="mt-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800 dark:border-rose-400/30 dark:bg-rose-400/10 dark:text-rose-200">
