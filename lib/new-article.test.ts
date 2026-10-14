@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import matter from "gray-matter";
-import { BODY_TEMPLATE, SLUG_RE, buildArticleMarkdown, formatLocalDate, isLocalHost, slugify, suggestSlug, validateArticleInput, type ArticleInput } from "./new-article";
+import { BODY_TEMPLATE, SLUG_RE, buildArticleMarkdown, formatLocalDate, isAuthoringEnabled, isLocalHost, slugify, suggestSlug, validateArticleInput, type ArticleInput } from "./new-article";
 
 describe("slugify", () => {
   it("转为小写并用短横线连接单词", () => {
@@ -238,4 +238,29 @@ describe("isLocalHost", () => {
       expect(isLocalHost(host)).toBe(false);
     },
   );
+});
+
+describe("isAuthoringEnabled", () => {
+  afterEach(() => vi.unstubAllEnvs());
+
+  it("开发模式开放", () => {
+    vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("KB_AUTHORING", "");
+    expect(isAuthoringEnabled()).toBe(true);
+  });
+  it("生产模式默认关闭", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("KB_AUTHORING", "");
+    expect(isAuthoringEnabled()).toBe(false);
+  });
+  it("生产模式设置 KB_AUTHORING=1 时开放", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("KB_AUTHORING", "1");
+    expect(isAuthoringEnabled()).toBe(true);
+  });
+  it("KB_AUTHORING 只认 1", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("KB_AUTHORING", "true");
+    expect(isAuthoringEnabled()).toBe(false);
+  });
 });

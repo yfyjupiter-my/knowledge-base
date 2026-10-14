@@ -1,4 +1,4 @@
-/** /new 正文工具栏：在光标处插入块级 Markdown 片段，选中的文字会被包裹在片段中 */
+/** /admin 正文工具栏：在光标处插入块级 Markdown 片段，选中的文字会被包裹在片段中 */
 
 export interface Snippet {
   before: string;

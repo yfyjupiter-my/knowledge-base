@@ -1,4 +1,4 @@
-/** 新建文章（/new）的纯逻辑：不依赖文件系统，可在服务端与客户端共用 */
+/** 新建文章（/admin）的纯逻辑：不依赖文件系统，可在服务端与客户端共用 */
 
 import yaml from "js-yaml";
 
@@ -6,9 +6,9 @@ export const SLUG_RE = /^[a-z0-9][a-z0-9-]*$/;
 
 export const BODY_TEMPLATE = "## 1. First steps\n\n- [ ] \n- [ ] \n";
 
-/** 仅在 npm run dev 下开放写入；next build 会把判断内联为常量 */
+/** 仅在 npm run dev 或设置 KB_AUTHORING=1（本机 Docker）时开放写入 */
 export function isAuthoringEnabled(): boolean {
-  return process.env.NODE_ENV === "development";
+  return process.env.NODE_ENV === "development" || process.env.KB_AUTHORING === "1";
 }
 
 const LOCAL_HOST_RE = /^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/i;

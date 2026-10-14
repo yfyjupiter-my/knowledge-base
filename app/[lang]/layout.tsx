@@ -60,9 +60,9 @@ export default async function RootLayout({ children, params }: Props) {
                 {d.site.supportPrefix} {d.site.supportLabel} · {d.site.supportContact}
               </span>
               {isAuthoringEnabled() && (
-                // 普通 <a> 整页加载：从 /new 后退时会离开文档并触发 beforeunload 确认
+                // 普通 <a> 整页加载：从 /admin 后退时会离开文档并触发 beforeunload 确认
                 <a
-                  href={localePath(lang, "/new")}
+                  href={localePath(lang, "/admin")}
                   className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-sky-600 px-2.5 py-1.5 text-sm text-white transition hover:bg-sky-700"
                 >
                   <SquarePen className="size-4" aria-hidden />

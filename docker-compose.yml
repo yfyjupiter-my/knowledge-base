@@ -1,15 +1,22 @@
 services:
   knowledge-base:
-    build: .
+    build:
+      context: .
+      args:
+        # 开放 /admin 新建文章；部署到他人可访问的服务器时请删除这一行与下方 environment 中的同名项
+        KB_AUTHORING: "1"
     image: knowledge-base:latest
     container_name: knowledge-base
     ports:
       # 宿主机端口默认 3200，可通过环境变量覆盖：KB_PORT=8080 docker compose up -d
-      - "${KB_PORT:-3200}:3000"
+      # 只绑定本机回环地址：/admin 可写文件，不能让局域网访问（Host 头可被伪造）
+      - "127.0.0.1:${KB_PORT:-3200}:3000"
     restart: unless-stopped
     volumes:
       # 挂载本地 content 目录（文章 + 分类配置）：修改后约 60 秒内生效，无需重新构建镜像
+      # 可写挂载：/admin 新建的文章直接保存到宿主机 content/articles/
       # 如需使用镜像内置的内容，删除下面这一行即可
-      - ./content:/app/content:ro
+      - ./content:/app/content
     environment:
       - NODE_ENV=production
+      - KB_AUTHORING=1

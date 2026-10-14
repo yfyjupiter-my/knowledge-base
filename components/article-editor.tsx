@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition, type KeyboardEvent } from "react";
 import { Code, Heading2, Info, ListChecks, X } from "lucide-react";
-import { checkSlug, createArticle, type CreateArticleState } from "@/app/[lang]/new/actions";
+import { checkSlug, createArticle, type CreateArticleState } from "@/app/[lang]/admin/actions";
 import { Markdown } from "@/components/markdown";
 import { CALLOUT_KINDS, CODE_LANGUAGES, HEADING, STEP, calloutSnippet, codeSnippet, insertSnippet, type CalloutKind, type Snippet } from "@/lib/editor-snippets";
 import { getDictionary, type Locale } from "@/lib/i18n";

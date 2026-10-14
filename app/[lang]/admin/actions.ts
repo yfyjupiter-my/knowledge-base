@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { slugExists, writeNewArticle } from "@/lib/article-files";
 import { ARTICLES_DIR } from "@/lib/articles";
@@ -42,6 +43,8 @@ export async function createArticle(lang: string, raw: unknown): Promise<CreateA
     if (written.reason === "exists") return { fieldErrors: { slug: "exists" }, suggestion: suggestionFor(value.slug) };
     return { formError: "writeFailed", detail: written.message };
   }
+  // 生产模式（Docker）下首页、侧栏与搜索索引有 60 秒缓存，立即刷新以包含新文章
+  revalidatePath("/[lang]", "layout");
   return { href: localePath(isLocale(lang) ? lang : DEFAULT_LOCALE, `/articles/${value.slug}`) };
 }
 

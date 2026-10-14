@@ -1,31 +1,31 @@
-# 新建文章图形界面（/new）设计
+# 新建文章图形界面（/admin）设计
 
 日期：2026-10-09 · 状态：待评审
 
 ## 1. 目标
 
-维护者在本机运行 `npm run dev` 时，通过网页表单填写文章信息并点击 "Create"，自动生成符合站点规范的英文文章 `content/articles/<slug>.md`，不再手写 frontmatter、文件名和固定结构。
+维护者在本机运行 `npm run dev` 或本机 Docker（`localhost:3200`）时，通过网页表单填写文章信息并点击 "Create"，自动生成符合站点规范的英文文章 `content/articles/<slug>.md`，不再手写 frontmatter、文件名和固定结构。
 
 **成功标准**
 
 - 不打开编辑器即可新建一篇能被站点正确识别（分类、标签、日期、步骤数、目录）的文章
 - 预览效果与正式文章页一致
-- 生产环境（`next start` / Docker）中该功能完全不可用，线上站点行为不变
+- 生产环境（`next start` / Docker）中默认完全不可用；仅在本机 Docker 显式设置 `KB_AUTHORING=1` 时开放（2026-10-14 起）
 
 **不在范围内**：编辑或删除已有文章、生成中文版（`.zh.md`）、自动 Git 提交、草稿持久化、多用户与鉴权。
 
 ## 2. 方案
 
-在现有 Next.js 应用中新增页面 `app/[lang]/new/page.tsx`，由 Server Action 写文件。预览直接复用 `components/markdown.tsx`，分类读取复用 `lib/categories.server.ts`。
+在现有 Next.js 应用中新增页面 `app/[lang]/admin/page.tsx`，由 Server Action 写文件。预览直接复用 `components/markdown.tsx`，分类读取复用 `lib/categories.server.ts`。
 
 不采用独立编辑器脚本（预览渲染需另起一套，难以与站点保持一致）或桌面程序（依赖重、需打包）。
 
 ## 3. 入口与开关
 
-- 判断条件：`process.env.NODE_ENV === "development"`，集中定义为 `lib/new-article.ts` 中的 `isAuthoringEnabled()`
-- 开发模式：顶栏显示 "New article" 按钮（文案走字典），链接到当前语言的 `/new`
-- 非开发模式：不渲染按钮；`/new` 页面调用 `notFound()`；Server Action 直接返回错误，不触碰文件系统
-- 路由：`/new`（英文界面）与 `/zh/new`（中文界面），沿用现有中间件；界面文案加入 `lib/i18n.ts` 字典的 `editor` 段
+- 判断条件：`process.env.NODE_ENV === "development" || process.env.KB_AUTHORING === "1"`，集中定义为 `lib/new-article.ts` 中的 `isAuthoringEnabled()`
+- 开启时：顶栏显示 "New article" 按钮（文案走字典），链接到当前语言的 `/admin`。layout 为静态生成，按钮在构建时决定，因此 Docker 需以构建参数传入 `KB_AUTHORING`
+- 未开启：不渲染按钮；`/admin` 页面调用 `notFound()`；Server Action 直接返回错误，不触碰文件系统
+- 路由：`/admin`（英文界面）与 `/zh/admin`（中文界面），沿用现有中间件；界面文案加入 `lib/i18n.ts` 字典的 `editor` 段
 - 无论界面语言为何，生成的文章固定为英文版 `<slug>.md`
 
 ## 4. 页面布局
@@ -86,11 +86,11 @@ updated: <YYYY-MM-DD>
 
 ## 7. 保存流程（Server Action `createArticle`）
 
-1. `isAuthoringEnabled()` 为假 → 返回错误；请求的 `Host` 不是 `localhost` / `127.0.0.1` / `[::1]`（可带端口）→ 返回错误（防止局域网调用与 DNS rebinding）
+1. `isAuthoringEnabled()` 为假 → 返回错误；请求的 `Host` 不是 `localhost` / `127.0.0.1` / `[::1]`（可带端口）→ 返回错误（防止局域网调用与 DNS rebinding；Host 头可被伪造，Docker 需同时把端口只绑定到 127.0.0.1）
 2. 服务端重新校验第 5 节全部规则；分类 id 必须存在于 `getCategories()`
 3. 检查 slug 冲突：`<slug>.md` 或 `<slug>.zh.md` 任一存在即为冲突
 4. `buildArticleMarkdown()` 生成内容，以 `fs.writeFile(path, data, { flag: "wx" })` 写入 `ARTICLES_DIR/<slug>.md`；`EEXIST` 视为冲突
-5. 成功 → 返回当前语言的 `/articles/<slug>`，由客户端整页跳转（不用 `redirect()`：dev 模式下写入文件触发的重新编译会打断客户端路由跳转）
+5. 成功 → `revalidatePath("/[lang]", "layout")` 刷新首页、侧栏与搜索的 ISR 缓存，返回当前语言的 `/articles/<slug>`，由客户端整页跳转（不用 `redirect()`：dev 模式下写入文件触发的重新编译会打断客户端路由跳转）
 
 slug 必须先通过正则校验才会参与路径拼接，因此不会写出 `_` 开头的文件，也不会跨目录写入。
 
@@ -113,11 +113,11 @@ Server Action 返回结构：`{ fieldErrors?: Record<field, code>, formError?: "
 | 文件 | 职责 |
 | --- | --- |
 | `lib/new-article.ts` | 纯逻辑：`isAuthoringEnabled`、`slugify`、`validateArticleInput`、`buildArticleMarkdown`，不依赖 `fs` |
-| `app/[lang]/new/actions.ts` | `"use server"`：`createArticle`、`checkSlug`（文件系统读写） |
-| `app/[lang]/new/page.tsx` | 服务端组件：开关检查、读取分类、渲染表单 |
+| `app/[lang]/admin/actions.ts` | `"use server"`：`createArticle`、`checkSlug`（文件系统读写） |
+| `app/[lang]/admin/page.tsx` | 服务端组件：开关检查、读取分类、渲染表单 |
 | `components/article-editor.tsx` | 客户端组件：表单、标签输入、工具栏、预览、状态与错误展示 |
 | `lib/i18n.ts` | 新增 `editor` 文案（中英） |
-| `app/[lang]/layout.tsx` | 开发模式下显示 "New article" 按钮 |
+| `app/[lang]/layout.tsx` | 开启时显示 "New article" 按钮 |
 
 ## 10. 测试
 
@@ -130,9 +130,9 @@ Server Action 返回结构：`{ fieldErrors?: Record<field, code>, formError?: "
 端到端（手动 / 浏览器自动化）：
 
 - 开发模式：新建文章 → 跳转到文章页，分类、标签、日期、步骤数正确；重复 slug 时提示冲突并给出建议名；必填项为空时提示错误
-- 生产构建：`/new` 返回 404，顶栏无按钮
+- 生产构建（未设 `KB_AUTHORING`）：`/admin` 返回 404，顶栏无按钮
 - `npm run typecheck`、`npm run build` 通过
 
 ## 11. 文档
 
-README 的"新建文章"一节增加图形界面的使用说明（`npm run dev` → 打开 `/new`），保留手动复制模板的方式作为备选。
+README 的"新建文章"一节增加图形界面的使用说明（`docker compose up` → `localhost:3200/admin`，或 `npm run dev` → `/admin`），保留手动复制模板的方式作为备选。
