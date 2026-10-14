@@ -10,7 +10,7 @@ import { getDictionary, type Locale } from "@/lib/i18n";
 import { SidebarTree } from "./sidebar-tree";
 
 /** 小屏下的目录：顶栏 ☰ 按钮 + 左侧抽屉，大屏隐藏（由常驻侧栏代替） */
-export function MobileNav({ lang, tree, categories }: { lang: Locale; tree: TreeCategory[]; categories: Category[] }) {
+export function MobileNav({ lang, tree, categories, authoring }: { lang: Locale; tree: TreeCategory[]; categories: Category[]; authoring?: boolean }) {
   const d = getDictionary(lang).nav;
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -76,7 +76,7 @@ export function MobileNav({ lang, tree, categories }: { lang: Locale; tree: Tree
                 </button>
               </div>
               <div className="min-h-0 flex-1">
-                <SidebarTree lang={lang} tree={tree} categories={categories} onNavigate={() => setOpen(false)} />
+                <SidebarTree lang={lang} tree={tree} categories={categories} authoring={authoring} onNavigate={() => setOpen(false)} />
               </div>
             </div>
           </div>,
