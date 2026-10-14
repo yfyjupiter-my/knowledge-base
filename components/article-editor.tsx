@@ -7,8 +7,12 @@ import { Markdown } from "@/components/markdown";
 import { CALLOUT_KINDS, CODE_LANGUAGES, HEADING, STEP, calloutSnippet, codeSnippet, insertSnippet, type CalloutKind, type Snippet } from "@/lib/editor-snippets";
 import { getDictionary, type Locale } from "@/lib/i18n";
 import { MAX_IMAGE_BYTES, altFromFileName, imageMarkdown } from "@/lib/images";
+import { createHistory, record, redo, transformAll, undo, type History } from "@/lib/undo-history";
 import { confirmLeave, setLeaveGuard } from "@/lib/leave-guard";
 import { BODY_TEMPLATE, SLUG_RE, slugify, type ArticleField } from "@/lib/new-article";
+
+/** 两次输入间隔小于该值时合并为同一步撤销 */
+const TYPING_MERGE_MS = 1000;
 
 type CategoryOption = { id: string; label: string };
 /** requestFailed 由客户端在请求本身失败时设置 */
@@ -53,6 +57,9 @@ export function ArticleEditor({ lang, categories, today }: { lang: Locale; categ
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadSeq = useRef(0);
+  const history = useRef<History>(createHistory(BODY_TEMPLATE));
+  // 上一次打字的时间；程序化修改、撤销、重做后清零，下一次打字另起一步
+  const lastTypedAt = useRef(0);
   // 用户已确认离开或文章已创建，随后的整页跳转不再弹出 beforeunload
   const leaving = useRef(false);
 
@@ -181,12 +188,56 @@ export function ArticleEditor({ lang, categories, today }: { lang: Locale; categ
     const el = bodyRef.current;
     if (!el) return;
     const { text, cursor } = insertSnippet(source, start, end, snippet);
+    history.current = record(history.current, { text, cursor }, { merge: false });
+    lastTypedAt.current = 0;
     setBody(text);
     requestAnimationFrame(() => {
       el.focus();
       el.setSelectionRange(cursor, cursor);
     });
   }
+
+  function onBodyChange(text: string, cursor: number) {
+    const now = Date.now();
+    history.current = record(history.current, { text, cursor }, { merge: now - lastTypedAt.current < TYPING_MERGE_MS });
+    lastTypedAt.current = now;
+    setBody(text);
+  }
+
+  /** 撤销 / 重做；返回 false 表示没有可用的步骤 */
+  function travel(direction: "undo" | "redo"): boolean {
+    const el = bodyRef.current;
+    const next = direction === "undo" ? undo(history.current) : redo(history.current);
+    if (!el || next === history.current) return false;
+    history.current = next;
+    lastTypedAt.current = 0;
+    const { text, cursor } = next.present;
+    setBody(text);
+    requestAnimationFrame(() => el.setSelectionRange(cursor, cursor));
+    return true;
+  }
+
+  function onBodyKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.nativeEvent.isComposing || !(e.ctrlKey || e.metaKey) || e.altKey) return;
+    const key = e.key.toLowerCase();
+    if (key !== "z" && key !== "y") return;
+    // 始终拦截：原生撤销栈与受控 value 不同步，交给浏览器会撤销到错误的状态
+    e.preventDefault();
+    travel(key === "z" && !e.shiftKey ? "undo" : "redo");
+  }
+
+  // 右键菜单 / 编辑菜单中的撤销、重做
+  useEffect(() => {
+    const el = bodyRef.current;
+    if (!el) return;
+    const onBeforeInput = (e: InputEvent) => {
+      if (e.inputType !== "historyUndo" && e.inputType !== "historyRedo") return;
+      e.preventDefault();
+      travel(e.inputType === "historyUndo" ? "undo" : "redo");
+    };
+    el.addEventListener("beforeinput", onBeforeInput);
+    return () => el.removeEventListener("beforeinput", onBeforeInput);
+  });
 
   /** 先在光标处插入占位，上传完成后替换为图片 Markdown；多张图片并行上传 */
   function uploadImages(files: File[]) {
@@ -217,7 +268,10 @@ export function ArticleEditor({ lang, categories, today }: { lang: Locale; categ
             result = { error: "requestFailed" };
           }
         }
-        setBody((b) => ("src" in result ? b.replace(placeholder, imageMarkdown(alt, result.src)) : removePlaceholder(b, placeholder)));
+        // 同时改写历史中的所有快照，撤销时不会重新出现「上传中」占位
+        const settle = (b: string) => ("src" in result ? b.replace(placeholder, imageMarkdown(alt, result.src)) : removePlaceholder(b, placeholder));
+        history.current = transformAll(history.current, settle);
+        setBody(settle);
         if ("error" in result) setUploadErrors((errs) => [...errs, uploadErrorMessage(result, file.name)]);
         setUploading((n) => n - 1);
       })();
@@ -488,7 +542,8 @@ export function ArticleEditor({ lang, categories, today }: { lang: Locale; categ
                 ref={bodyRef}
                 className={`${inputClass} mt-2 h-[60vh] resize-y font-mono leading-relaxed`}
                 value={body}
-                onChange={(e) => setBody(e.target.value)}
+                onChange={(e) => onBodyChange(e.target.value, e.target.selectionStart)}
+                onKeyDown={onBodyKeyDown}
                 onPaste={(e) => {
                   const files = imageFiles(e.clipboardData.files);
                   if (files.length === 0) return;
