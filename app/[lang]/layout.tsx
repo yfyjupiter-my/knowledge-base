@@ -48,7 +48,7 @@ export default async function RootLayout({ children, params }: Props) {
       <body className="min-h-dvh">
         <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/80 backdrop-blur dark:border-slate-800 dark:bg-slate-950/80">
           <div className="flex h-14 items-center justify-between gap-4 px-4 lg:px-6">
-            <MobileNav lang={lang} tree={tree} categories={categories} />
+            <MobileNav lang={lang} tree={tree} categories={categories} authoring={isAuthoringEnabled()} />
             <Link href={localePath(lang, "/")} className="mr-auto flex min-w-0 items-center gap-2 font-semibold">
               <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-sky-600 text-white">
                 <LifeBuoy className="size-5" aria-hidden />
@@ -75,7 +75,7 @@ export default async function RootLayout({ children, params }: Props) {
         </header>
         <div className="lg:grid lg:grid-cols-[280px_minmax(0,1fr)]">
           <aside className="sticky top-14 hidden h-[calc(100dvh-3.5rem)] border-r border-slate-200 bg-slate-50 lg:block dark:border-slate-800 dark:bg-slate-900/40">
-            <SidebarTree lang={lang} tree={tree} categories={categories} shortcut />
+            <SidebarTree lang={lang} tree={tree} categories={categories} authoring={isAuthoringEnabled()} shortcut />
           </aside>
           <div className="flex min-h-[calc(100dvh-3.5rem)] min-w-0 flex-col bg-white dark:bg-slate-950">
             <main className="flex-1">{children}</main>

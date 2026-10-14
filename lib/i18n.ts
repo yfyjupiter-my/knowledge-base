@@ -74,6 +74,7 @@ const zh = {
     empty: "没有匹配的文章，按回车进行全文搜索",
     toggle: (label: string) => `展开或收起「${label}」`,
     summary: (n: number, date: string) => `共 ${n} 篇 · 最近更新 ${date}`,
+    edit: (title: string) => `编辑「${title}」`,
   },
   article: {
     breadcrumb: "当前位置",
@@ -119,7 +120,6 @@ const zh = {
     submit: "创建",
     submitting: "正在创建…",
     editTitle: "编辑文章",
-    editExisting: (n: number) => `编辑已有文章（${n} 篇）`,
     editIntro: (file: string) => `修改后点击“保存”，将覆盖 content/articles/${file}。保存后请自行用 Git 提交。`,
     editSlugHint: "编辑时不能修改文件名",
     save: "保存",
@@ -188,6 +188,7 @@ const en: Dictionary = {
     empty: "No matches. Press Enter for a full-text search.",
     toggle: (label: string) => `Expand or collapse "${label}"`,
     summary: (n: number, date: string) => `${n} article${n === 1 ? "" : "s"} · updated ${date}`,
+    edit: (title: string) => `Edit "${title}"`,
   },
   article: {
     breadcrumb: "Breadcrumb",
@@ -233,7 +234,6 @@ const en: Dictionary = {
     submit: "Create",
     submitting: "Creating…",
     editTitle: "Edit article",
-    editExisting: (n: number) => `Edit an existing article (${n})`,
     editIntro: (file: string) => `Click Save to overwrite content/articles/${file}. Commit the change with Git afterwards.`,
     editSlugHint: "The file name cannot be changed while editing",
     save: "Save",

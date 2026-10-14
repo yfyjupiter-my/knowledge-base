@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ChevronRight, House, Search } from "lucide-react";
+import { ChevronRight, House, Search, SquarePen } from "lucide-react";
 import { getCategory, type Category, type CategoryId } from "@/lib/categories";
 import type { TreeArticle, TreeCategory } from "@/lib/articles";
 import { HTML_LANG, getDictionary, localePath, stripLocale, type Locale } from "@/lib/i18n";
@@ -66,11 +66,13 @@ interface SidebarTreeProps {
   categories: Category[];
   /** 只给常驻侧栏开启，避免抽屉里的副本重复响应快捷键 */
   shortcut?: boolean;
+  /** 开放写入时（npm run dev / KB_AUTHORING）在文章标题右侧显示编辑入口 */
+  authoring?: boolean;
   /** 点击任一链接后的回调（移动端用于关闭抽屉） */
   onNavigate?: () => void;
 }
 
-export function SidebarTree({ lang, tree, categories, shortcut, onNavigate }: SidebarTreeProps) {
+export function SidebarTree({ lang, tree, categories, authoring, shortcut, onNavigate }: SidebarTreeProps) {
   const d = getDictionary(lang);
   const router = useRouter();
   const path = stripLocale(usePathname());
@@ -232,16 +234,27 @@ export function SidebarTree({ lang, tree, categories, shortcut, onNavigate }: Si
                   {group.articles.map((a) => {
                     const active = a.slug === currentSlug;
                     return (
-                      <li key={a.slug}>
+                      <li key={a.slug} className="group relative">
                         <Link
                           href={localePath(lang, `/articles/${encodeURIComponent(a.slug)}`)}
                           onClick={onNavigate}
                           aria-current={active ? "page" : undefined}
                           lang={HTML_LANG[a.contentLocale]}
-                          className="-ml-[9px] block rounded-r-md border-l-2 border-transparent py-1.5 pl-2.5 pr-2 text-sm leading-snug text-slate-600 hover:bg-slate-200/60 hover:text-slate-900 aria-[current]:border-sky-600 aria-[current]:bg-sky-50 aria-[current]:font-medium aria-[current]:text-sky-700 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white dark:aria-[current]:border-sky-400 dark:aria-[current]:bg-sky-400/10 dark:aria-[current]:text-sky-300"
+                          className={`-ml-[9px] block rounded-r-md border-l-2 border-transparent py-1.5 pl-2.5 ${authoring ? "pr-8" : "pr-2"} text-sm leading-snug text-slate-600 hover:bg-slate-200/60 hover:text-slate-900 aria-[current]:border-sky-600 aria-[current]:bg-sky-50 aria-[current]:font-medium aria-[current]:text-sky-700 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white dark:aria-[current]:border-sky-400 dark:aria-[current]:bg-sky-400/10 dark:aria-[current]:text-sky-300`}
                         >
                           {highlight(a.title, words)}
                         </Link>
+                        {authoring && (
+                          // 悬浮标题时出现；触屏没有悬浮，始终显示。普通 <a> 整页加载，与其他 /admin 入口一致
+                          <a
+                            href={localePath(lang, `/admin/edit/${encodeURIComponent(a.slug)}`)}
+                            aria-label={d.nav.edit(a.title)}
+                            title={d.nav.edit(a.title)}
+                            className="absolute right-1 top-1 grid size-6 place-items-center rounded text-slate-400 opacity-0 transition hover:bg-slate-300/60 hover:text-slate-900 focus-visible:opacity-100 group-hover:opacity-100 dark:hover:bg-white/10 dark:hover:text-white [@media(hover:none)]:opacity-100"
+                          >
+                            <SquarePen className="size-3.5" aria-hidden />
+                          </a>
+                        )}
                         {active && a.headings.length > 0 && (
                           <ul aria-label={d.article.toc} lang={HTML_LANG[a.contentLocale]} className="mb-1.5 ml-2.5 mt-0.5 border-l border-slate-200 dark:border-slate-800">
                             {a.headings.map((h) => (
