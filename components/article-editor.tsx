@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition, type DragEvent, type KeyboardEvent } from "react";
-import { Code, Heading2, ImagePlus, Info, ListChecks, X } from "lucide-react";
+import { Code, FileUp, Heading2, ImagePlus, Info, ListChecks, X } from "lucide-react";
 import { checkSlug, createArticle, updateArticle, uploadImage, type CreateArticleState, type UploadImageResult } from "@/app/[lang]/admin/actions";
 import { Markdown } from "@/components/markdown";
 import { CALLOUT_KINDS, CODE_LANGUAGES, HEADING, STEP, calloutSnippet, codeSnippet, insertSnippet, type CalloutKind, type Snippet } from "@/lib/editor-snippets";
@@ -9,7 +9,7 @@ import { HTML_LANG, getDictionary, type Locale } from "@/lib/i18n";
 import { MAX_IMAGE_BYTES, altFromFileName, imageMarkdown } from "@/lib/images";
 import { createHistory, record, redo, transformAll, undo, type History } from "@/lib/undo-history";
 import { confirmLeave, setLeaveGuard } from "@/lib/leave-guard";
-import { BODY_TEMPLATE, SLUG_RE, slugify, type ArticleField, type ArticleInput } from "@/lib/new-article";
+import { BODY_TEMPLATE, SLUG_RE, parseArticleMarkdown, slugify, type ArticleField, type ArticleInput } from "@/lib/new-article";
 
 /** 两次输入间隔小于该值时合并为同一步撤销 */
 const TYPING_MERGE_MS = 1000;
@@ -62,8 +62,10 @@ export function ArticleEditor({ lang, categories, today, edit }: { lang: Locale;
   const [pending, startTransition] = useTransition();
   const [uploading, setUploading] = useState(0);
   const [uploadErrors, setUploadErrors] = useState<string[]>([]);
+  const [importError, setImportError] = useState<string | null>(null);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const importInputRef = useRef<HTMLInputElement>(null);
   const uploadSeq = useRef(0);
   const history = useRef<History>(createHistory(initial.body));
   // 上一次打字的时间；程序化修改、撤销、重做后清零，下一次打字另起一步
@@ -303,6 +305,38 @@ export function ArticleEditor({ lang, categories, today, edit }: { lang: Locale;
       default:
         return e[result.error];
     }
+  }
+
+  /** 整体替换为 Markdown 文件的内容（front matter 填入各字段，正文经撤销栈可撤销） */
+  async function importMarkdown(file: File) {
+    if (dirty && !window.confirm(d.importConfirm)) return;
+    let bytes: ArrayBuffer;
+    try {
+      bytes = await file.arrayBuffer();
+    } catch {
+      setImportError(d.importErrors.readFailed(file.name));
+      return;
+    }
+    let raw: string;
+    try {
+      raw = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+    } catch {
+      setImportError(d.importErrors.notUtf8(file.name));
+      return;
+    }
+    const parsed = parseArticleMarkdown(raw);
+    setImportError(null);
+    setState({});
+    // 新建页的文件名仍跟随标题；用户手动改过文件名则保留
+    onTitleChange(parsed.title);
+    setSummary(parsed.summary);
+    setCategory(parsed.category);
+    setTags([...new Set(parsed.tags.map((t) => t.trim()).filter(Boolean))]);
+    setTagDraft("");
+    setUpdated(parsed.updated || today);
+    history.current = record(history.current, { text: parsed.body, cursor: 0 }, { merge: false });
+    lastTypedAt.current = 0;
+    setBody(parsed.body);
   }
 
   function imageFiles(list: FileList | null | undefined): File[] {
@@ -552,7 +586,32 @@ export function ArticleEditor({ lang, categories, today, edit }: { lang: Locale;
                     e.target.value = "";
                   }}
                 />
+                {!edit && (
+                  <>
+                    <button type="button" className={toolButtonClass} title={d.toolbar.importHint} onClick={() => importInputRef.current?.click()}>
+                      <FileUp className="size-3.5" aria-hidden />
+                      {d.toolbar.import}
+                    </button>
+                    <input
+                      ref={importInputRef}
+                      type="file"
+                      accept=".md,text/markdown"
+                      hidden
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        // 允许再次选择同一个文件
+                        e.target.value = "";
+                        if (file) void importMarkdown(file);
+                      }}
+                    />
+                  </>
+                )}
               </div>
+              {importError && (
+                <p role="alert" className="mt-2 text-xs text-rose-600 dark:text-rose-400">
+                  {importError}
+                </p>
+              )}
               {uploadErrors.length > 0 && (
                 <ul role="alert" className="mt-2 space-y-0.5 text-xs text-rose-600 dark:text-rose-400">
                   {uploadErrors.map((err, i) => (
