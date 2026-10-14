@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ArticleEditor } from "@/components/article-editor";
-import { articleFileName, parseArticleMarkdown, readArticleFile } from "@/lib/article-files";
+import { articleFileName, readArticleFile } from "@/lib/article-files";
 import { ARTICLES_DIR, getArticle } from "@/lib/articles";
 import { OTHER_ID } from "@/lib/categories";
 import { getCategories } from "@/lib/categories.server";
 import { getDictionary, isLocale } from "@/lib/i18n";
-import { formatLocalDate, isAuthoringEnabled } from "@/lib/new-article";
+import { formatLocalDate, isAuthoringEnabled, parseArticleMarkdown } from "@/lib/new-article";
 
 // 每次请求读取最新文件：编辑页记录的指纹必须对应当前内容
 export const dynamic = "force-dynamic";

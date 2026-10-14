@@ -2,10 +2,9 @@ import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import matter from "gray-matter";
 import { DEFAULT_LOCALE, LOCALES, type Locale } from "./i18n";
 import { IMAGE_FILE_RE, detectImageType } from "./images";
-import { SLUG_RE, type ArticleInput } from "./new-article";
+import { SLUG_RE } from "./new-article";
 
 /** 某一语言版本的文件名：vpn.md（默认语言）、vpn.zh.md */
 export function articleFileName(slug: string, locale: Locale): string {
@@ -52,22 +51,6 @@ export async function readArticleFile(dir: string, slug: string, locale: Locale)
     if ((e as NodeJS.ErrnoException).code === "ENOENT") return null;
     throw e;
   }
-}
-
-/** 把文章原文拆回表单字段（slug 由文件名决定，不在其中） */
-export function parseArticleMarkdown(raw: string): Omit<ArticleInput, "slug"> {
-  const { data, content } = matter(raw);
-  const text = (v: unknown) => (typeof v === "string" ? v.trim() : "");
-  // YAML 会把未加引号的 2026-01-01 解析成 UTC 零点的 Date
-  const updated = data.updated instanceof Date && !Number.isNaN(data.updated.getTime()) ? data.updated.toISOString().slice(0, 10) : text(data.updated);
-  return {
-    title: text(data.title),
-    summary: text(data.summary),
-    category: text(data.category),
-    tags: Array.isArray(data.tags) ? data.tags.map(String) : [],
-    updated,
-    body: content.replace(/\r\n?/g, "\n").replace(/^\n+/, ""),
-  };
 }
 
 export type OverwriteResult =

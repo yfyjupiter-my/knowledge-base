@@ -2,8 +2,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { contentHash, overwriteArticle, parseArticleMarkdown, readArticleFile, slugExists, writeImage, writeNewArticle } from "./article-files";
-import { buildArticleMarkdown } from "./new-article";
+import { contentHash, overwriteArticle, readArticleFile, slugExists, writeImage, writeNewArticle } from "./article-files";
+import { buildArticleMarkdown, parseArticleMarkdown } from "./new-article";
 
 let dir: string;
 
@@ -133,6 +133,16 @@ describe("parseArticleMarkdown", () => {
       updated: "2026-09-18",
       body: "## 1. Step\n",
     });
+  });
+
+  // 导入的文件不可信：---js 块里的代码不得执行
+  it("不执行 ---js 前置块中的代码", () => {
+    const g = globalThis as { __importProbe?: string };
+    const raw = '---js\n({ title: (globalThis.__importProbe = "ran", "x") })\n---\nbody';
+    const parsed = parseArticleMarkdown(raw);
+    expect(g.__importProbe).toBeUndefined();
+    expect(parsed.title).toBe("");
+    expect(parsed.body).toBe("body");
   });
 
   it("缺少的字段为空", () => {

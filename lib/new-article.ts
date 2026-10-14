@@ -1,5 +1,6 @@
 /** 新建文章（/admin）的纯逻辑：不依赖文件系统，可在服务端与客户端共用 */
 
+import matter from "gray-matter";
 import yaml from "js-yaml";
 
 export const SLUG_RE = /^[a-z0-9][a-z0-9-]*$/;
@@ -91,6 +92,28 @@ export function buildArticleMarkdown(article: ArticleInput): string {
     ].join("\n") + "\n";
   const body = article.body.replace(/\r\n?/g, "\n").replace(/^\n+/, "").replace(/\s+$/, "");
   return body ? `${head}\n${body}\n` : head;
+}
+
+/**
+ * gray-matter 默认会把 ---js / ---javascript 块当作代码执行。导入的文件来自用户选择，
+ * 不可信，因此这两种引擎一律忽略（返回空对象），只保留 YAML 解析。
+ */
+const NO_SCRIPT_ENGINE = () => ({});
+
+/** 把文章原文拆回表单字段（slug 由文件名决定，不在其中）；导入 Markdown 与编辑已有文章共用 */
+export function parseArticleMarkdown(raw: string): Omit<ArticleInput, "slug"> {
+  const { data, content } = matter(raw, { engines: { js: NO_SCRIPT_ENGINE, javascript: NO_SCRIPT_ENGINE } });
+  const text = (v: unknown) => (typeof v === "string" ? v.trim() : "");
+  // YAML 会把未加引号的 2026-01-01 解析成 UTC 零点的 Date
+  const updated = data.updated instanceof Date && !Number.isNaN(data.updated.getTime()) ? data.updated.toISOString().slice(0, 10) : text(data.updated);
+  return {
+    title: text(data.title),
+    summary: text(data.summary),
+    category: text(data.category),
+    tags: Array.isArray(data.tags) ? data.tags.map(String) : [],
+    updated,
+    body: content.replace(/\r\n?/g, "\n").replace(/^\n+/, ""),
+  };
 }
 
 export type ArticleField = keyof ArticleInput;
