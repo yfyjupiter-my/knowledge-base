@@ -49,7 +49,7 @@ content/articles/vpn-connection.md  →  /articles/vpn-connection
 **推荐：使用图形界面（仅本机）**
 
 ```bash
-docker compose up -d --build   # 之后访问 http://localhost:3200/admin
+docker compose up -d --build   # 之后访问 http://localhost:3199/admin
 # 或者开发模式：npm run dev，访问 http://localhost:3000/admin
 ```
 
@@ -57,7 +57,7 @@ docker compose up -d --build   # 之后访问 http://localhost:3200/admin
 
 - 文件名根据标题自动生成，也可以手动修改；同名文章已存在时不会覆盖，并会提示可用的名称
 - 该页面只在 `npm run dev` 或设置了 `KB_AUTHORING=1` 时可用，否则访问返回 404
-- 仓库自带的 `docker-compose.yml` 面向本机使用：已开启 `KB_AUTHORING`、以可写方式挂载 `./content`，并且端口只绑定 `127.0.0.1`。部署到他人可访问的服务器时，请删除其中的 `KB_AUTHORING` 并恢复 `:ro` 挂载
+- 仓库自带的 `docker-compose.yml` 中，`knowledge-base` 服务供本机写入：已开启 `KB_AUTHORING`、以可写方式挂载 `./content`，并且端口只绑定 `127.0.0.1`。局域网访问请使用只读的 `knowledge-base-lan` 服务（见 [Docker 部署](#3-docker-部署)），不要把开启了 `KB_AUTHORING` 的端口暴露出去
 - 无论哪种方式，写入请求都只接受以 `localhost` / `127.0.0.1` 访问的页面
 
 **插入图片**：在正文工具栏点击 **Image**，或直接把图片粘贴、拖放到正文中。图片保存到 `content/images/`（文件名为内容哈希，重复上传同一张图不会产生副本），并以 `![说明](/media/<文件名>)` 插入正文。
@@ -177,7 +177,7 @@ content/articles/vpn-connection.zh.md   →  /zh/articles/vpn-connection   （�
 docker compose up -d --build   # 构建镜像并在后台启动
 ```
 
-访问 http://localhost:3200（新建文章：http://localhost:3200/admin）。常用命令：
+访问 http://localhost:3199（新建文章：http://localhost:3199/admin）。常用命令：
 
 ```bash
 docker compose logs -f         # 查看日志
@@ -185,13 +185,31 @@ docker compose down            # 停止并移除容器
 git pull && docker compose up -d --build   # 更新代码后重新部署
 ```
 
-宿主机端口默认为 3200，如需更换可以指定其他端口：
+本机写入端口默认为 3199（局域网只读端口见下文），如需更换可以指定其他端口：
 
 ```bash
 KB_PORT=8080 docker compose up -d
 ```
 
-`docker-compose.yml` 默认将 `./content` 挂载进容器（可写，供 `/admin` 保存文章和图片），因此 `git pull` 更新文章或分类后，无需重建镜像即可生效。端口默认只绑定本机 `127.0.0.1`，如需让局域网访问，请先按上文关闭 `KB_AUTHORING`，再把端口改回 `"${KB_PORT:-3200}:3000"`。
+`docker-compose.yml` 默认将 `./content` 挂载进容器（可写，供 `/admin` 保存文章和图片），因此 `git pull` 更新文章或分类后，无需重建镜像即可生效。
+
+### 局域网访问（只读）
+
+`docker compose up -d --build` 会同时启动两个容器，共用同一份 `./content`：
+
+| 服务 | 地址 | 用途 |
+| --- | --- | --- |
+| `knowledge-base` | http://localhost:3199（只绑定 `127.0.0.1`） | 本机浏览和 `/admin` 写入 |
+| `knowledge-base-lan` | http://192.168.100.64:3200（监听所有网卡） | 局域网其他机器只读浏览，`/admin` 返回 404 |
+
+- 本机保存的文章约 60 秒后在局域网实例中生效
+- 局域网端口可通过 `KB_LAN_PORT=8080 docker compose up -d` 修改；只想暴露在指定网卡上，可把端口写成 `"192.168.100.64:3200:3000"`
+- 写入保护依赖 Host 头检查，而 Host 头可以伪造，所以开启了 `KB_AUTHORING` 的 3199 端口必须只绑定 `127.0.0.1`
+- 其他机器打不开时，检查 Windows 防火墙：网络配置文件应为"专用"，并在管理员 PowerShell 中放行端口：
+
+```powershell
+New-NetFirewallRule -DisplayName "knowledge-base LAN" -Direction Inbound -Protocol TCP -LocalPort 3200 -Action Allow
+```
 
 ### 直接使用 Docker
 
