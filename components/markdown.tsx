@@ -46,6 +46,10 @@ function buildComponents(lang: Locale): Components {
         </a>
       );
     },
+    img({ node: _node, alt, ...props }) {
+      // eslint-disable-next-line @next/next/no-img-element -- 图片来自 /media 路由，尺寸未知
+      return <img alt={alt ?? ""} loading="lazy" className="rounded-lg border border-slate-200 dark:border-slate-800" {...props} />;
+    },
     table({ node: _node, children, ...props }) {
       return (
         <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">

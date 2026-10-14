@@ -2,10 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
-import { slugExists, writeNewArticle } from "@/lib/article-files";
-import { ARTICLES_DIR } from "@/lib/articles";
+import { slugExists, writeImage, writeNewArticle } from "@/lib/article-files";
+import { ARTICLES_DIR, IMAGES_DIR } from "@/lib/articles";
 import { getCategories } from "@/lib/categories.server";
 import { DEFAULT_LOCALE, isLocale, localePath } from "@/lib/i18n";
+import { MAX_IMAGE_BYTES, MEDIA_PREFIX } from "@/lib/images";
 import { SLUG_RE, buildArticleMarkdown, isAuthoringEnabled, isLocalHost, suggestSlug, validateArticleInput, type FieldErrors } from "@/lib/new-article";
 
 export type CreateArticleState = {
@@ -53,4 +54,24 @@ export async function checkSlug(slug: string): Promise<{ exists: boolean; sugges
   if (!isAuthoringEnabled() || !(await requestIsLocal()) || typeof slug !== "string" || !SLUG_RE.test(slug)) return { exists: false };
   if (!slugExists(ARTICLES_DIR, slug)) return { exists: false };
   return { exists: true, suggestion: suggestionFor(slug) };
+}
+
+export type UploadImageResult =
+  | { src: string }
+  | { error: "disabled" | "forbiddenHost" | "unsupportedType" | "tooLarge" | "writeFailed"; detail?: string };
+
+/** 保存正文中插入的图片到 content/images/，返回可直接写进 Markdown 的地址 */
+export async function uploadImage(formData: FormData): Promise<UploadImageResult> {
+  if (!isAuthoringEnabled()) return { error: "disabled" };
+  if (!(await requestIsLocal())) return { error: "forbiddenHost" };
+  const file = formData.get("file");
+  if (!(file instanceof File)) return { error: "unsupportedType" };
+  if (file.size > MAX_IMAGE_BYTES) return { error: "tooLarge" };
+
+  const written = await writeImage(IMAGES_DIR, new Uint8Array(await file.arrayBuffer()));
+  if (!written.ok) {
+    if (written.reason === "unsupportedType") return { error: "unsupportedType" };
+    return { error: "writeFailed", detail: written.message };
+  }
+  return { src: MEDIA_PREFIX + written.file };
 }

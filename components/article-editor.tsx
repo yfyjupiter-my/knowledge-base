@@ -1,15 +1,18 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition, type KeyboardEvent } from "react";
-import { Code, Heading2, Info, ListChecks, X } from "lucide-react";
-import { checkSlug, createArticle, type CreateArticleState } from "@/app/[lang]/admin/actions";
+import { useEffect, useRef, useState, useTransition, type DragEvent, type KeyboardEvent } from "react";
+import { Code, Heading2, ImagePlus, Info, ListChecks, X } from "lucide-react";
+import { checkSlug, createArticle, uploadImage, type CreateArticleState, type UploadImageResult } from "@/app/[lang]/admin/actions";
 import { Markdown } from "@/components/markdown";
 import { CALLOUT_KINDS, CODE_LANGUAGES, HEADING, STEP, calloutSnippet, codeSnippet, insertSnippet, type CalloutKind, type Snippet } from "@/lib/editor-snippets";
 import { getDictionary, type Locale } from "@/lib/i18n";
+import { MAX_IMAGE_BYTES, altFromFileName, imageMarkdown } from "@/lib/images";
 import { confirmLeave, setLeaveGuard } from "@/lib/leave-guard";
 import { BODY_TEMPLATE, SLUG_RE, slugify, type ArticleField } from "@/lib/new-article";
 
 type CategoryOption = { id: string; label: string };
+/** requestFailed 由客户端在请求本身失败时设置 */
+type UploadResult = UploadImageResult | { error: "requestFailed" };
 
 const inputClass =
   "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 dark:border-slate-700 dark:bg-slate-900";
@@ -17,6 +20,14 @@ const toolButtonClass =
   "inline-flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800";
 const proseClass =
   "prose prose-slate max-w-none dark:prose-invert prose-h2:mt-10 prose-h2:border-b prose-h2:border-slate-200 prose-h2:pb-2 dark:prose-h2:border-slate-800 prose-a:text-sky-700 dark:prose-a:text-sky-400 prose-code:rounded prose-code:bg-slate-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:font-normal prose-code:before:content-none prose-code:after:content-none dark:prose-code:bg-slate-800 prose-table:text-sm";
+
+/** 上传失败时连同多个占位之间的空行一起移除 */
+function removePlaceholder(text: string, placeholder: string): string {
+  for (const variant of [placeholder + "\n\n", "\n\n" + placeholder, placeholder]) {
+    if (text.includes(variant)) return text.replace(variant, "");
+  }
+  return text;
+}
 
 function splitTags(raw: string): string[] {
   return raw.split(/[,，]/).map((t) => t.trim()).filter(Boolean);
@@ -37,7 +48,11 @@ export function ArticleEditor({ lang, categories, today }: { lang: Locale; categ
   const [state, setState] = useState<CreateArticleState>({});
   const [taken, setTaken] = useState<{ suggestion?: string } | null>(null);
   const [pending, startTransition] = useTransition();
+  const [uploading, setUploading] = useState(0);
+  const [uploadErrors, setUploadErrors] = useState<string[]>([]);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const uploadSeq = useRef(0);
   // 用户已确认离开或文章已创建，随后的整页跳转不再弹出 beforeunload
   const leaving = useRef(false);
 
@@ -159,12 +174,78 @@ export function ArticleEditor({ lang, categories, today }: { lang: Locale; categ
   function insert(snippet: Snippet) {
     const el = bodyRef.current;
     if (!el) return;
-    const { text, cursor } = insertSnippet(body, el.selectionStart, el.selectionEnd, snippet);
+    insertAt(body, el.selectionStart, el.selectionEnd, snippet);
+  }
+
+  function insertAt(source: string, start: number, end: number, snippet: Snippet) {
+    const el = bodyRef.current;
+    if (!el) return;
+    const { text, cursor } = insertSnippet(source, start, end, snippet);
     setBody(text);
     requestAnimationFrame(() => {
       el.focus();
       el.setSelectionRange(cursor, cursor);
     });
+  }
+
+  /** 先在光标处插入占位，上传完成后替换为图片 Markdown；多张图片并行上传 */
+  function uploadImages(files: File[]) {
+    const el = bodyRef.current;
+    if (!el || files.length === 0) return;
+    setUploadErrors([]);
+    const items = files.map((file) => {
+      const alt = altFromFileName(file.name);
+      return { file, alt, placeholder: imageMarkdown(`${d.uploading} ${alt}`, `#upload-${++uploadSeq.current}`) };
+    });
+    // 选中的文字被图片替换，而不是像其他工具按钮那样被包裹
+    const start = el.selectionStart;
+    insertAt(body.slice(0, start) + body.slice(el.selectionEnd), start, start, { before: items.map((i) => i.placeholder).join("\n\n"), after: "" });
+
+    for (const { file, alt, placeholder } of items) {
+      setUploading((n) => n + 1);
+      void (async () => {
+        let result: UploadResult;
+        if (file.size > MAX_IMAGE_BYTES) {
+          result = { error: "tooLarge" };
+        } else {
+          const formData = new FormData();
+          formData.append("file", file);
+          try {
+            result = await uploadImage(formData);
+          } catch {
+            // 服务器重启或已停止
+            result = { error: "requestFailed" };
+          }
+        }
+        setBody((b) => ("src" in result ? b.replace(placeholder, imageMarkdown(alt, result.src)) : removePlaceholder(b, placeholder)));
+        if ("error" in result) setUploadErrors((errs) => [...errs, uploadErrorMessage(result, file.name)]);
+        setUploading((n) => n - 1);
+      })();
+    }
+  }
+
+  function uploadErrorMessage(result: Exclude<UploadResult, { src: string }>, name: string): string {
+    const e = d.uploadErrors;
+    switch (result.error) {
+      case "unsupportedType":
+      case "tooLarge":
+        return e[result.error](name);
+      case "writeFailed":
+        return e.writeFailed(result.detail ?? "");
+      default:
+        return e[result.error];
+    }
+  }
+
+  function imageFiles(list: FileList | null | undefined): File[] {
+    return Array.from(list ?? []).filter((f) => f.type.startsWith("image/"));
+  }
+
+  function onBodyDrop(e: DragEvent<HTMLTextAreaElement>) {
+    const files = imageFiles(e.dataTransfer.files);
+    if (files.length === 0) return;
+    e.preventDefault();
+    uploadImages(files);
   }
 
   function submit() {
@@ -378,13 +459,44 @@ export function ArticleEditor({ lang, categories, today }: { lang: Locale; categ
                     <option value="plain">{d.toolbar.plain}</option>
                   </select>
                 </label>
+                <button type="button" className={toolButtonClass} title={d.toolbar.imageHint} onClick={() => fileInputRef.current?.click()}>
+                  <ImagePlus className="size-3.5" aria-hidden />
+                  {d.toolbar.image}
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/gif,image/webp"
+                  multiple
+                  hidden
+                  onChange={(e) => {
+                    uploadImages(Array.from(e.target.files ?? []));
+                    // 允许再次选择同一个文件
+                    e.target.value = "";
+                  }}
+                />
               </div>
+              {uploadErrors.length > 0 && (
+                <ul role="alert" className="mt-2 space-y-0.5 text-xs text-rose-600 dark:text-rose-400">
+                  {uploadErrors.map((err, i) => (
+                    <li key={i}>{err}</li>
+                  ))}
+                </ul>
+              )}
               <textarea
                 id="body"
                 ref={bodyRef}
                 className={`${inputClass} mt-2 h-[60vh] resize-y font-mono leading-relaxed`}
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
+                onPaste={(e) => {
+                  const files = imageFiles(e.clipboardData.files);
+                  if (files.length === 0) return;
+                  e.preventDefault();
+                  uploadImages(files);
+                }}
+                onDragOver={(e) => e.dataTransfer.types.includes("Files") && e.preventDefault()}
+                onDrop={onBodyDrop}
                 spellCheck={false}
               />
             </div>
@@ -407,10 +519,10 @@ export function ArticleEditor({ lang, categories, today }: { lang: Locale; categ
         <div className="flex justify-end">
           <button
             type="submit"
-            disabled={pending}
+            disabled={pending || uploading > 0}
             className="rounded-lg bg-sky-600 px-5 py-2 text-sm font-medium text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {pending ? d.submitting : d.submit}
+            {pending ? d.submitting : uploading > 0 ? d.uploading : d.submit}
           </button>
         </div>
       </form>
